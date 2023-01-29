@@ -2,7 +2,7 @@ use std::io;
 use std::mem::size_of;
 
 use crate::error::{IoResult, AnyError};
-use crate::formatter::Formatter;
+use crate::formatter::WriteFormatter;
 
 use crate::serialize::Serialize;
 use crate::serializer::{Serializer};
@@ -23,12 +23,12 @@ impl<S: Serialize> IntoJson for S {
     }
 }
 
-pub struct JsonSerializer<'w, W: io::Write, F: Formatter<W>> {
+pub struct JsonSerializer<'w, W: io::Write, F: WriteFormatter<W>> {
     write: &'w mut W,
     formatter: F,
 }
 
-impl<'w, W: io::Write, F: Formatter<W>> JsonSerializer<'w, W, F> {
+impl<'w, W: io::Write, F: WriteFormatter<W>> JsonSerializer<'w, W, F> {
     pub fn new(formatter: F, write: &'w mut W) -> Self {
         Self {
             formatter,
@@ -37,7 +37,7 @@ impl<'w, W: io::Write, F: Formatter<W>> JsonSerializer<'w, W, F> {
     }
 }
 
-impl<'w, W: io::Write, F: Formatter<W>> Serializer for JsonSerializer<'w, W, F> {
+impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W, F> {
     fn begin_struct(&mut self, name: &str, fields: usize) -> crate::error::SuccessResult {
         self.formatter.write_struct_begin(self.write, name, fields)?;
         Ok(())
@@ -130,7 +130,7 @@ macro_rules! impl_write_json_primitve {
     };
 }
 
-impl<W: io::Write> Formatter<W> for PrettyJsonFormatter {
+impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
     fn write_struct_begin(&mut self, write: &mut W, _name: &str, _fields: usize) -> IoResult {
         self.write_ident(write)?;
         self.write_unescaped_string(write, "{")?;
