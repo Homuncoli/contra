@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 lib-contra = { path = "./lib-contra" }
+proc-contra = { path = "./proc-contra" }
