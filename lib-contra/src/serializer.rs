@@ -8,7 +8,7 @@ macro_rules! decl_serialize_primitive {
 
 pub trait Serializer {
     fn begin_struct(&mut self, name: &str, fields: usize) -> SuccessResult;
-    fn end_struct(&mut self, name: &str, pos: &Position)-> SuccessResult;
+    fn end_struct(&mut self, name: &str)-> SuccessResult;
 
     fn serialize_field<V: Serialize>(&mut self, identifier: &str, value: &V, pos: &Position)-> SuccessResult;
     fn serialize_value<V: Serialize>(&mut self, value: &V, pos: &Position) -> SuccessResult;

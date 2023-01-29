@@ -10,7 +10,7 @@ macro_rules! decl_write_primitive {
 
 pub trait WriteFormatter<W: io::Write> {
     fn write_struct_begin(&mut self, write: &mut W, name: &str, fields: usize) -> IoResult;
-    fn write_struct_end(&mut self, write: &mut W, name: &str, pos: &Position) -> IoResult;
+    fn write_struct_end(&mut self, write: &mut W, name: &str) -> IoResult;
 
     fn write_field_assignnment_begin(&mut self, write: &mut W) -> IoResult;
     fn write_field_key(&mut self, write: &mut W, name: &str) -> IoResult;

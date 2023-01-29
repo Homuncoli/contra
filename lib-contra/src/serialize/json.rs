@@ -54,8 +54,8 @@ impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W
         Ok(())
     }
 
-    fn end_struct(&mut self, name: &str, pos: &Position) -> SuccessResult {
-        self.formatter.write_struct_end(self.write, name, pos)?;
+    fn end_struct(&mut self, name: &str) -> SuccessResult {
+        self.formatter.write_struct_end(self.write, name)?;
         Ok(())
     }
 
@@ -159,17 +159,10 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
         Ok(())
     }
 
-    fn write_struct_end(&mut self, write: &mut W, _name: &str, pos: &Position) -> IoResult {
+    fn write_struct_end(&mut self, write: &mut W, _name: &str) -> IoResult {
         self.decrease_ident();
         self.write_ident(write)?;
         self.write_unescaped_string(write, "}")?;
-        match pos {
-            Position::Trailing => {
-                self.write_seperator(write)?;
-                self.write_line_break(write)?;
-            },
-            Position::Closing => (),
-        }
         Ok(())
     }
 

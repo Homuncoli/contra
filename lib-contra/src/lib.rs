@@ -48,7 +48,7 @@ mod test {
     }
 
     impl Serialize for PrimitiveDataTypesStruct {
-        fn serialize<S: Serializer>(&self, ser: &mut S, pos: &Position) -> SuccessResult {
+        fn serialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
             ser.begin_struct("PrimitiveDataTypesStruct", 13)?;
 
             ser.serialize_field("i8", &self.i8, &Position::Trailing)?;
@@ -65,7 +65,7 @@ mod test {
             ser.serialize_field("usize", &self.isize, &Position::Trailing)?;
             ser.serialize_field("string", &self.string, &Position::Closing)?;
 
-            ser.end_struct("PrimitiveDataTypesStruct", pos)?;
+            ser.end_struct("PrimitiveDataTypesStruct")?;
 
             Ok(())
         }

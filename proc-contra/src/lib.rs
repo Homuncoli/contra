@@ -24,18 +24,22 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
 
     quote!(
         impl lib_contra::serialize::Serialize for #c_ident {
-            fn serialize<S: lib_contra::serializer::Serializer>(&self, ser: &mut S, pos: &lib_contra::position::Position) -> lib_contra::error::SuccessResult {
+            fn serialize<S: lib_contra::serializer::Serializer>(&self, ser: &mut S, _pos: &lib_contra::position::Position) -> lib_contra::error::SuccessResult {
                 ser.begin_struct(stringify!(#c_ident), #n_fields)?;
 
                 #(#ser_fields)*
                 
-                ser.end_struct(stringify!(#c_ident), pos)?;
+                ser.end_struct(stringify!(#c_ident))?;
                 
                 Ok(())
             }
         }
     ).into()
 }
+
+
+
+
 
 #[proc_macro_derive(Deserialize)]
 pub fn impl_deserialize(input: TokenStream) -> TokenStream {
