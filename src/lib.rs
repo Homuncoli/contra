@@ -1,18 +1,22 @@
 #[cfg(test)]
 mod test {
-    use lib_contra::serialize::json::IntoJson;
-    use proc_contra::Serialize;
+    use lib_contra::{serialize::json::IntoJson, deserialize::{json::FromJson}};
+    use proc_contra::{Serialize, Deserialize};
 
-    #[derive(Serialize)]
-    struct EmptyStruct {}
+    #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+    struct EmptyStruct {
+    }
 
     #[test]
     fn empty_struct_works() {
-        let obj = EmptyStruct {};
+        let expected = EmptyStruct { };
         
-        let result = IntoJson::to_json(&obj);
+        let json = IntoJson::to_json(&expected);
+        assert!(json.is_ok());
 
+        let result = FromJson::from_json(&json.unwrap());
         assert!(result.is_ok());
-        println!("{}", result.unwrap());
+
+        assert_eq!(expected, result.unwrap());
     }
 }
