@@ -104,6 +104,17 @@ impl JsonFormatter {
     }
 }
 
+macro_rules! impl_read_primitive {
+    ($ttype: ident, $read_func: ident) => {
+        fn $read_func(&mut self, read: &mut R) -> Result<$ttype,AnyError> {
+            self.strip(read)?;
+            let literal = self.read_escaped_string(read)?;
+            let value = literal.parse::<$ttype>()?;
+            Ok(value)
+        }
+    };
+}
+
 impl<R: io::Read + io::Seek> ReadFormatter<R> for JsonFormatter {
     fn read_struct_begin(&mut self, read: &mut R, _name: &str, _fields: usize) -> SuccessResult {
         self.strip(read)?;
@@ -151,21 +162,23 @@ impl<R: io::Read + io::Seek> ReadFormatter<R> for JsonFormatter {
 
     fn read_field_assignnment_end(&mut self, read: &mut R) -> SuccessResult {
         self.strip(read)?;
-        let valid = self.continues_with_unescaped(read, b",")?;
-        if valid {
-            Ok(())
-        } else {
-            println!("{}", "WARN: no assignement end");
-            Ok(())
-        }
+        self.continues_with_unescaped(read, b",")?;
+        Ok(())
     }
 
-    fn read_i32(&mut self, read: &mut R) -> Result<i32,AnyError> {
-        self.strip(read)?;
-        let literal = self.read_escaped_string(read)?;
-        let value = literal.parse::<i32>()?;
-        Ok(value)
-    }
+    impl_read_primitive!(i8,    read_i8);
+    impl_read_primitive!(i16,   read_i16);
+    impl_read_primitive!(i32,   read_i32);
+    impl_read_primitive!(i64,   read_i64);
+    impl_read_primitive!(i128,  read_i128);
+    impl_read_primitive!(u8  ,  read_u8);
+    impl_read_primitive!(u16 ,  read_u16);
+    impl_read_primitive!(u32 ,  read_u32);
+    impl_read_primitive!(u64 ,  read_u64);
+    impl_read_primitive!(u128,  read_u128);
+    impl_read_primitive!(usize, read_usize);
+    impl_read_primitive!(isize, read_isize);
+    impl_read_primitive!(String,read_string);
 }
 
 pub struct JsonDeserializer<'r, R: io::Read + io::Seek> {
@@ -180,6 +193,14 @@ impl<'r, R: io::Read + io::Seek> JsonDeserializer<'r, R> {
             formatter: JsonFormatter::new()
         }
     }
+}
+
+macro_rules! impl_deserialize_primitive {
+    ($ttype: ident, $des_func: ident, $for_func: ident) => {
+        fn $des_func(&mut self) -> Result<$ttype, AnyError> {
+            self.formatter.$for_func(&mut self.read)
+        }       
+    };
 }
 
 impl<'r, R: io::Read + io::Seek> Deserializer for JsonDeserializer<'r, R> {
@@ -202,9 +223,19 @@ impl<'r, R: io::Read + io::Seek> Deserializer for JsonDeserializer<'r, R> {
         Ok(value)
     }
 
-    fn deserialize_i32(&mut self) -> Result<i32, AnyError> {
-        self.formatter.read_i32(&mut self.read)
-    }
+    impl_deserialize_primitive!(i8,    deserialize_i8,      read_i8);
+    impl_deserialize_primitive!(i16,   deserialize_i16,     read_i16);
+    impl_deserialize_primitive!(i32,   deserialize_i32,     read_i32);
+    impl_deserialize_primitive!(i64,   deserialize_i64,     read_i64);
+    impl_deserialize_primitive!(i128,  deserialize_i128,    read_i128);
+    impl_deserialize_primitive!(u8  ,  deserialize_u8,      read_u8);
+    impl_deserialize_primitive!(u16 ,  deserialize_u16,     read_u16);
+    impl_deserialize_primitive!(u32 ,  deserialize_u32,     read_u32);
+    impl_deserialize_primitive!(u64 ,  deserialize_u64,     read_u64);
+    impl_deserialize_primitive!(u128,  deserialize_u128,    read_u128);
+    impl_deserialize_primitive!(usize, deserialize_usize,   read_usize);
+    impl_deserialize_primitive!(isize, deserialize_isize,   read_isize);
+    impl_deserialize_primitive!(String,deserialize_string,  read_string);
 }
 
 #[cfg(test)]

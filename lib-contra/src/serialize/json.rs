@@ -38,6 +38,16 @@ impl<'w, W: io::Write, F: WriteFormatter<W>> JsonSerializer<'w, W, F> {
     }
 }
 
+
+macro_rules! impl_serialize_primitive {
+    ($type: ident, $ser_func: ident, $for_func: ident) => {
+        fn $ser_func(&mut self, value: &$type) -> SuccessResult {
+            self.formatter.$for_func(self.write, value)?;
+            Ok(())
+        }
+    };
+}
+
 impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W, F> {
     fn begin_struct(&mut self, name: &str, fields: usize) -> SuccessResult {
         self.formatter.write_struct_begin(self.write, name, fields)?;
@@ -63,10 +73,19 @@ impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W
         Ok(())
     }
 
-    fn serialize_i32(&mut self, value: &i32) -> SuccessResult {
-        self.formatter.write_i32(self.write, value)?;
-        Ok(())
-    }
+    impl_serialize_primitive!(i8,    serialize_i8,      write_i8);
+    impl_serialize_primitive!(i16,   serialize_i16,     write_i16);
+    impl_serialize_primitive!(i32,   serialize_i32,     write_i32);
+    impl_serialize_primitive!(i64,   serialize_i64,     write_i64);
+    impl_serialize_primitive!(i128,  serialize_i128,    write_i128);
+    impl_serialize_primitive!(u8  ,  serialize_u8,      write_u8);
+    impl_serialize_primitive!(u16 ,  serialize_u16,     write_u16);
+    impl_serialize_primitive!(u32 ,  serialize_u32,     write_u32);
+    impl_serialize_primitive!(u64 ,  serialize_u64,     write_u64);
+    impl_serialize_primitive!(u128,  serialize_u128,    write_u128);
+    impl_serialize_primitive!(usize, serialize_usize,   write_usize);
+    impl_serialize_primitive!(isize, serialize_isize,   write_isize);
+    impl_serialize_primitive!(String,serialize_string,  write_string);
 }
 
 pub struct PrettyJsonFormatter {
@@ -122,7 +141,7 @@ impl PrettyJsonFormatter {
     }
 }
 
-macro_rules! impl_write_json_primitve {
+macro_rules! impl_write_primitive {
     ($type: ident, $ser_func: ident) => {
         fn $ser_func(&mut self, write: &mut W, value: &$type) -> IoResult {
             self.write_escaped_string(write, &value.to_string())?;
@@ -180,44 +199,17 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
         Ok(())
     }
 
-    impl_write_json_primitve!(i32, write_i32);
-}
-
-#[cfg(test)]
-mod test {
-    use crate::{serialize::{Serialize, json::IntoJson}, serializer::Serializer, error::SuccessResult, position::Position};
-
-    struct PrimitiveDataTypesStruct {
-        i32: i32,
-    }
-
-    impl PrimitiveDataTypesStruct {
-        fn new() -> Self {
-            PrimitiveDataTypesStruct { 
-                i32: i32::MAX,
-             }
-        }
-    }
-
-    impl Serialize for PrimitiveDataTypesStruct {
-        fn serialize<S: Serializer>(&self, ser: &mut S, pos: &Position) -> SuccessResult {
-            ser.begin_struct("PrimitiveDataTypesStruct", 1)?;
-
-            ser.serialize_field("i32", &self.i32, pos)?;
-
-            ser.end_struct("PrimitiveDataTypesStruct", pos)?;
-
-            Ok(())
-        }
-    }
-
-    #[test]
-    fn serializing_struct_works() {
-        let obj = PrimitiveDataTypesStruct::new();
-
-        let json = IntoJson::to_json(&obj);
-
-        assert!(json.is_ok());
-        println!("{}", json.unwrap());
-    }
+    impl_write_primitive!(i8,    write_i8);
+    impl_write_primitive!(i16,   write_i16);
+    impl_write_primitive!(i32,   write_i32);
+    impl_write_primitive!(i64,   write_i64);
+    impl_write_primitive!(i128,  write_i128);
+    impl_write_primitive!(u8  ,  write_u8);
+    impl_write_primitive!(u16 ,  write_u16);
+    impl_write_primitive!(u32 ,  write_u32);
+    impl_write_primitive!(u64 ,  write_u64);
+    impl_write_primitive!(u128,  write_u128);
+    impl_write_primitive!(usize, write_usize);
+    impl_write_primitive!(isize, write_isize);
+    impl_write_primitive!(String,write_string);
 }
