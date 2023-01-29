@@ -29,7 +29,7 @@ impl JsonFormatter {
     fn continues_with_unescaped<R: io::Read + io::Seek>(&mut self, read: &mut R, expected: &[u8]) -> Result<bool, AnyError> {
         let prev_pos = read.stream_position()?;
 
-        let mut buffer: Vec<u8> = (0..expected.len()).map(|i| 0).collect();
+        let mut buffer: Vec<u8> = vec![0; expected.len()];
         read.read_exact(&mut buffer)?;
 
         if buffer == expected {
@@ -42,30 +42,16 @@ impl JsonFormatter {
 
     // if the next bytes match "**expected**"", they remain consumed, otherwise its rewund
     fn continues_with_escaped<R: io::Read + io::Seek>(&mut self, read: &mut R, expected: &[u8]) -> Result<bool, AnyError> {
-        let prev_pos = read.stream_position()?;
-
         let expected = [b"\"", expected, b"\""].concat();
-
-        let mut buffer: Vec<u8> = (0..expected.len()).map(|i| 0).collect();
-        read.read_exact(&mut buffer)?;
-
-        if buffer == expected {
-            Ok(true)
-        } else {
-            read.seek(SeekFrom::Start(prev_pos))?;
-            Ok(false)
-        }
+        self.continues_with_unescaped(read, &expected)
     }
 
     fn read_escaped_string<R: io::Read + io::Seek>(&mut self, read: &mut R) -> Result<String, AnyError> {
         let prev_pos = read.stream_position()?;
 
-        let mut buffer: [u8; 1] = [0; 1];
-        read.read_exact(&mut buffer)?;
-
-        if buffer != *b"\"" {
+        if !self.continues_with_unescaped(read, b"\"")? {
             read.seek(SeekFrom::Start(prev_pos))?;
-            return Err(format!("expected the start of an escaped string but got \"{}\" instead", from_utf8(&buffer)?).into());
+            return Err("expected an escaped string".into());
         }
 
         let result = self.read_until(read, b"\"");
@@ -129,7 +115,7 @@ impl<R: io::Read + io::Seek> ReadFormatter<R> for JsonFormatter {
         }
     }
 
-    fn read_struct_end(&mut self, read: &mut R, name: &str) -> SuccessResult {
+    fn read_struct_end(&mut self, read: &mut R, _name: &str) -> SuccessResult {
         self.strip(read)?;
         let valid = self.continues_with_unescaped(read, b"}")?;
         if valid {
@@ -139,7 +125,7 @@ impl<R: io::Read + io::Seek> ReadFormatter<R> for JsonFormatter {
         }
     }
 
-    fn read_field_assignnment_begin(&mut self, read: &mut R) -> SuccessResult {
+    fn read_field_assignnment_begin(&mut self, _read: &mut R) -> SuccessResult {
         Ok(())
     }
 
@@ -223,7 +209,7 @@ impl<'r, R: io::Read + io::Seek> Deserializer for JsonDeserializer<'r, R> {
 
 #[cfg(test)]
 mod test {
-    use crate::{error::{AnyError}, deserialize::Deserialize, deserializer::{Deserializer, self}};
+    use crate::{error::{AnyError}, deserialize::Deserialize, deserializer::{Deserializer}};
 
     use super::FromJson;
 
