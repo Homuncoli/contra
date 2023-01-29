@@ -92,4 +92,19 @@ mod test {
 
         assert_eq!(expected, result);
     }
+
+    #[test]
+    fn vec_string_works() {
+        let expected = vec!["A", "B", "C"];
+        
+        let json = IntoJson::to_json(&expected);
+        assert!(json.is_ok());
+        let json = json.unwrap();
+
+        let result = FromJson::from_json(&json);
+        assert!(result.is_ok());
+        let result: Vec<String> = result.unwrap();
+
+        assert_eq!(expected, result);
+    }
 }

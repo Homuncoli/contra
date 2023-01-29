@@ -10,8 +10,15 @@ pub trait Serializer {
     fn begin_struct(&mut self, name: &str, fields: usize) -> SuccessResult;
     fn end_struct(&mut self, name: &str)-> SuccessResult;
 
+    fn begin_collection(&mut self, name: &str, size: usize) -> SuccessResult;
+    fn end_collection(&mut self, name: &str)-> SuccessResult;
+
+    fn serialize_item<V: Serialize>(&mut self, i: usize, item: &V, pos: &Position) -> SuccessResult;
+
     fn serialize_field<V: Serialize>(&mut self, identifier: &str, value: &V, pos: &Position)-> SuccessResult;
     fn serialize_value<V: Serialize>(&mut self, value: &V, pos: &Position) -> SuccessResult;
+
+    fn serialize_str(&mut self, value: &str) -> SuccessResult;
 
     decl_serialize_primitive!(i8,    serialize_i8);
     decl_serialize_primitive!(i16,   serialize_i16);
@@ -25,5 +32,4 @@ pub trait Serializer {
     decl_serialize_primitive!(u128,  serialize_u128);
     decl_serialize_primitive!(usize, serialize_usize);
     decl_serialize_primitive!(isize, serialize_isize);
-    decl_serialize_primitive!(String,serialize_string);
 }

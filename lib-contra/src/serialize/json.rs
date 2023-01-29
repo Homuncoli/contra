@@ -73,6 +73,20 @@ impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W
         Ok(())
     }
 
+    fn begin_collection(&mut self, name: &str, size: usize) -> SuccessResult {
+        self.formatter.write_collection_begin(self.write, name, size)?;
+        Ok(())
+    }
+
+    fn end_collection(&mut self, name: &str)-> SuccessResult {
+        self.formatter.write_collection_end(self.write, name)?;
+        Ok(())
+    }
+
+    fn serialize_item<V: Serialize>(&mut self, _i: usize, item: &V, pos: &Position) -> SuccessResult {
+        self.serialize_value(item, pos)
+    }
+
     impl_serialize_primitive!(i8,    serialize_i8,      write_i8);
     impl_serialize_primitive!(i16,   serialize_i16,     write_i16);
     impl_serialize_primitive!(i32,   serialize_i32,     write_i32);
@@ -85,7 +99,7 @@ impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W
     impl_serialize_primitive!(u128,  serialize_u128,    write_u128);
     impl_serialize_primitive!(usize, serialize_usize,   write_usize);
     impl_serialize_primitive!(isize, serialize_isize,   write_isize);
-    impl_serialize_primitive!(String,serialize_string,  write_string);
+    impl_serialize_primitive!(str,   serialize_str,     write_str);
 }
 
 pub struct PrettyJsonFormatter {
@@ -192,6 +206,17 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
         Ok(())
     }
 
+    fn write_collection_begin(&mut self, write: &mut W, _name: &str, _size: usize) -> IoResult {
+        write.write_all(b"[")?;
+        self.write_line_break(write)?;
+        Ok(())
+    }
+
+    fn write_collection_end(&mut self, write: &mut W, _name: &str)-> IoResult {
+        write.write_all(b"]")?;
+        Ok(())
+    }
+
     impl_write_primitive!(i8,    write_i8);
     impl_write_primitive!(i16,   write_i16);
     impl_write_primitive!(i32,   write_i32);
@@ -204,5 +229,5 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
     impl_write_primitive!(u128,  write_u128);
     impl_write_primitive!(usize, write_usize);
     impl_write_primitive!(isize, write_isize);
-    impl_write_primitive!(String,write_string);
+    impl_write_primitive!(str  , write_str);
 }

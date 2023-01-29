@@ -166,6 +166,18 @@ impl<R: io::Read + io::Seek> ReadFormatter<R> for JsonFormatter {
         Ok(())
     }
 
+    fn read_vec_begin(&mut self, read: &mut R, _name: &str) -> SuccessResult {
+        self.strip(read)?;
+        self.continues_with_unescaped(read, b"[")?;
+        Ok(())
+    }
+
+    fn read_vec_end(&mut self, read: &mut R, _name: &str) -> SuccessResult {
+        self.strip(read)?;
+        self.continues_with_unescaped(read, b"[")?;
+        Ok(())
+    }
+
     impl_read_primitive!(i8,    read_i8);
     impl_read_primitive!(i16,   read_i16);
     impl_read_primitive!(i32,   read_i32);
@@ -221,6 +233,19 @@ impl<'r, R: io::Read + io::Seek> Deserializer for JsonDeserializer<'r, R> {
         let value = T::deserialize(self)?;
         self.formatter.read_field_assignnment_end(&mut self.read)?;
         Ok(value)
+    }
+
+    fn deserialize_vec<Item: Deserialize>(&mut self, name: &str) -> Result<Vec<Item>, AnyError> {
+        self.formatter.read_vec_begin(&mut self.read, name)?;
+        
+        let mut vec = vec![];
+        while let Ok(item) = Item::deserialize(self) {
+            vec.push(item);
+        }
+
+        self.formatter.read_vec_end(&mut self.read, name)?;
+
+        Ok(vec)
     }
 
     impl_deserialize_primitive!(i8,    deserialize_i8,      read_i8);

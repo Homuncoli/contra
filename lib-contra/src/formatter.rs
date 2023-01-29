@@ -12,6 +12,9 @@ pub trait WriteFormatter<W: io::Write> {
     fn write_struct_begin(&mut self, write: &mut W, name: &str, fields: usize) -> IoResult;
     fn write_struct_end(&mut self, write: &mut W, name: &str) -> IoResult;
 
+    fn write_collection_begin(&mut self, write: &mut W, name: &str, size: usize) -> IoResult;
+    fn write_collection_end(&mut self, write: &mut W, name: &str)-> IoResult;
+
     fn write_field_assignnment_begin(&mut self, write: &mut W) -> IoResult;
     fn write_field_key(&mut self, write: &mut W, name: &str) -> IoResult;
     fn write_field_assignnment_operator(&mut self, write: &mut W) -> IoResult;
@@ -29,7 +32,7 @@ pub trait WriteFormatter<W: io::Write> {
     decl_write_primitive!(u128,  write_u128);
     decl_write_primitive!(usize, write_usize);
     decl_write_primitive!(isize, write_isize);
-    decl_write_primitive!(String,write_string);
+    decl_write_primitive!(str,   write_str);
 }
 
 
@@ -42,6 +45,9 @@ macro_rules! decl_read_primitive {
 pub trait ReadFormatter<R: io::Read + io::Seek> {
     fn read_struct_begin(&mut self, read: &mut R, name: &str, fields: usize) -> SuccessResult;
     fn read_struct_end(&mut self, read: &mut R, name: &str) -> SuccessResult;
+
+    fn read_vec_begin(&mut self, read: &mut R, name: &str) -> SuccessResult;
+    fn read_vec_end(&mut self, read: &mut R, name: &str) -> SuccessResult;
 
     fn read_field_assignnment_begin(&mut self, read: &mut R) -> SuccessResult;
     fn read_field_key(&mut self, read: &mut R, name: &str) -> SuccessResult;

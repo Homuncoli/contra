@@ -29,3 +29,9 @@ impl_deserialize_primitive!(u128,  deserialize_u128);
 impl_deserialize_primitive!(usize, deserialize_usize);
 impl_deserialize_primitive!(isize, deserialize_isize);
 impl_deserialize_primitive!(String,deserialize_string);
+
+impl<Item: Deserialize> Deserialize for Vec<Item> {
+    fn deserialize<D: Deserializer>(des: &mut D) -> Result<Self, AnyError> {
+        des.deserialize_vec(stringify!(Vec<Item>))
+    }
+}

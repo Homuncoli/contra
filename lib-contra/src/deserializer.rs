@@ -11,6 +11,8 @@ pub trait Deserializer {
     fn deserialize_struct_begin(&mut self, name: &str, fields: usize) -> SuccessResult;
     fn deserialize_struct_end(&mut self, name: &str) -> SuccessResult;
 
+    fn deserialize_vec<Item: Deserialize>(&mut self, name: &str) -> Result<Vec<Item>, AnyError>;
+
     fn deserialize_field<T: Deserialize>(&mut self, field: &str) -> Result<T, AnyError>; 
 
     decl_deserialize_primitive!(i8,    deserialize_i8);
