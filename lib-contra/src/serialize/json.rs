@@ -1,9 +1,10 @@
 use std::io;
 use std::mem::size_of;
 
-use crate::error::{IoResult, AnyError};
+use crate::error::{IoResult, AnyError, SuccessResult};
 use crate::formatter::WriteFormatter;
 
+use crate::position::Position;
 use crate::serialize::Serialize;
 use crate::serializer::{Serializer};
 
@@ -17,7 +18,7 @@ impl<S: Serialize> IntoJson for S {
         let formatter = PrettyJsonFormatter::new("\t".to_string());
         let mut serializer = JsonSerializer::new(formatter, &mut buffer);
 
-        self.serialize(&mut serializer)?;
+        self.serialize(&mut serializer, &Position::Closing)?;
         
         unsafe { Ok(String::from_utf8_unchecked(buffer)) }
     }
@@ -38,31 +39,31 @@ impl<'w, W: io::Write, F: WriteFormatter<W>> JsonSerializer<'w, W, F> {
 }
 
 impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W, F> {
-    fn begin_struct(&mut self, name: &str, fields: usize) -> crate::error::SuccessResult {
+    fn begin_struct(&mut self, name: &str, fields: usize) -> SuccessResult {
         self.formatter.write_struct_begin(self.write, name, fields)?;
         Ok(())
     }
 
-    fn end_struct(&mut self, name: &str)-> crate::error::SuccessResult {
-        self.formatter.write_struct_end(self.write, name)?;
+    fn end_struct(&mut self, name: &str, pos: &Position) -> SuccessResult {
+        self.formatter.write_struct_end(self.write, name, pos)?;
         Ok(())
     }
 
-    fn serialize_field<V: crate::serialize::Serialize>(&mut self, identifier: &str, value: &V)-> crate::error::SuccessResult {
+    fn serialize_field<V: crate::serialize::Serialize>(&mut self, identifier: &str, value: &V, pos: &Position)-> SuccessResult {
         self.formatter.write_field_assignnment_begin(self.write)?;
         self.formatter.write_field_key(self.write, identifier)?;
         self.formatter.write_field_assignnment_operator(self.write)?;
-        value.serialize(self)?;
-        self.formatter.write_field_assignnment_end(self.write)?;
+        value.serialize(self, &pos)?;
+        self.formatter.write_field_assignnment_end(self.write, &pos)?;
         Ok(())
     }
 
-    fn serialize_value<V: crate::serialize::Serialize>(&mut self, value: &V) -> crate::error::SuccessResult {
-        value.serialize(self)?;
+    fn serialize_value<V: crate::serialize::Serialize>(&mut self, value: &V, pos: &Position) -> SuccessResult {
+        value.serialize(self, pos)?;
         Ok(())
     }
 
-    fn serialize_i32(&mut self, value: &i32) -> crate::error::SuccessResult {
+    fn serialize_i32(&mut self, value: &i32) -> SuccessResult {
         self.formatter.write_i32(self.write, value)?;
         Ok(())
     }
@@ -139,11 +140,17 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
         Ok(())
     }
 
-    fn write_struct_end(&mut self, write: &mut W, _name: &str) -> IoResult {
+    fn write_struct_end(&mut self, write: &mut W, _name: &str, pos: &Position) -> IoResult {
         self.decrease_ident();
         self.write_ident(write)?;
         self.write_unescaped_string(write, "}")?;
-        self.write_line_break(write)?;
+        match pos {
+            Position::Trailing => {
+                self.write_seperator(write)?;
+                self.write_line_break(write)?;
+            },
+            Position::Closing => (),
+        }
         Ok(())
     }
 
@@ -164,8 +171,11 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
         Ok(())
     }
 
-    fn write_field_assignnment_end(&mut self, write: &mut W) -> IoResult {
-        self.write_seperator(write)?;
+    fn write_field_assignnment_end(&mut self, write: &mut W, pos: &Position) -> IoResult {
+        match pos {
+            Position::Trailing => self.write_seperator(write)?,
+            Position::Closing => (),
+        }
         self.write_line_break(write)?;
         Ok(())
     }
@@ -175,7 +185,7 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
 
 #[cfg(test)]
 mod test {
-    use crate::{serialize::{Serialize, json::IntoJson}, serializer::Serializer, error::SuccessResult};
+    use crate::{serialize::{Serialize, json::IntoJson}, serializer::Serializer, error::SuccessResult, position::Position};
 
     struct PrimitiveDataTypesStruct {
         i32: i32,
@@ -190,12 +200,12 @@ mod test {
     }
 
     impl Serialize for PrimitiveDataTypesStruct {
-        fn serialize<S: Serializer>(&self, ser: &mut S) -> SuccessResult {
+        fn serialize<S: Serializer>(&self, ser: &mut S, pos: &Position) -> SuccessResult {
             ser.begin_struct("PrimitiveDataTypesStruct", 1)?;
 
-            ser.serialize_field("i32", &self.i32)?;
+            ser.serialize_field("i32", &self.i32, pos)?;
 
-            ser.end_struct("PrimitiveDataTypesStruct")?;
+            ser.end_struct("PrimitiveDataTypesStruct", pos)?;
 
             Ok(())
         }
