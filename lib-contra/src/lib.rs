@@ -5,6 +5,7 @@ pub mod serialize;
 pub mod formatter;
 pub mod deserialize;
 pub mod deserializer;
+pub mod persistant;
 
 #[cfg(test)]
 mod test {

@@ -108,7 +108,7 @@ pub struct PrettyJsonFormatter {
 }
 
 impl PrettyJsonFormatter {
-    fn new(sym: String) -> Self {
+    pub fn new(sym: String) -> Self {
         Self {
             ident_sym: sym,
             ident_num: 0,

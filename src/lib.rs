@@ -1,15 +1,15 @@
 #[cfg(test)]
 mod test {
-    use lib_contra::{serialize::json::IntoJson, deserialize::{json::FromJson}};
-    use proc_contra::{Serialize, Deserialize};
+    use lib_contra::{deserialize::json::FromJson, serialize::json::IntoJson};
+    use proc_contra::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
     struct EmptyStruct {}
 
     #[test]
     fn empty_struct_works() {
-        let expected = EmptyStruct { };
-        
+        let expected = EmptyStruct {};
+
         let json = IntoJson::to_json(&expected);
         assert!(json.is_ok());
 
@@ -21,15 +21,15 @@ mod test {
 
     #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
     struct PrimitiveDataTypesStruct {
-        i8:   i32,
-        i16:  i16,
-        i32:  i32,
-        i64:  i64,
+        i8: i32,
+        i16: i16,
+        i32: i32,
+        i64: i64,
         i128: i128,
-        u8:   u32,
-        u16:  u16,
-        u32:  u32,
-        u64:  u64,
+        u8: u32,
+        u16: u16,
+        u32: u32,
+        u64: u64,
         u128: u128,
         usize: usize,
         isize: isize,
@@ -39,18 +39,18 @@ mod test {
     impl PrimitiveDataTypesStruct {
         fn new() -> Self {
             PrimitiveDataTypesStruct {
-                i8:     1000,
-                i16:    i16::MAX,
-                i32:    i32::MAX,
-                i64:    i64::MAX,
-                i128:   i128::MAX,
-                u8:     1000,
-                u16:    u16::MAX,
-                u32:    u32::MAX,
-                u64:    u64::MAX,
-                u128:   u128::MAX,
-                usize:  usize::MAX,
-                isize:  isize::MAX,
+                i8: 1000,
+                i16: i16::MAX,
+                i32: i32::MAX,
+                i64: i64::MAX,
+                i128: i128::MAX,
+                u8: 1000,
+                u16: u16::MAX,
+                u32: u32::MAX,
+                u64: u64::MAX,
+                u128: u128::MAX,
+                usize: usize::MAX,
+                isize: isize::MAX,
                 string: "Hello World!".to_string(),
             }
         }
@@ -59,7 +59,7 @@ mod test {
     #[test]
     fn primitive_data_struct_works() {
         let expected = PrimitiveDataTypesStruct::new();
-        
+
         let json = IntoJson::to_json(&expected);
         assert!(json.is_ok());
 
@@ -81,7 +81,7 @@ mod test {
             p1: PrimitiveDataTypesStruct::new(),
             p2: PrimitiveDataTypesStruct::new(),
         };
-        
+
         let json = IntoJson::to_json(&expected);
         assert!(json.is_ok());
         let json = json.unwrap();
@@ -96,7 +96,7 @@ mod test {
     #[test]
     fn vec_string_works() {
         let expected = vec!["A", "B", "C"];
-        
+
         let json = IntoJson::to_json(&expected);
         assert!(json.is_ok());
         let json = json.unwrap();
