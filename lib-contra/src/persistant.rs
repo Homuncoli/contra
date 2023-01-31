@@ -1,13 +1,13 @@
 use std::{fs::File, io::{Write, Cursor, BufReader, Read, self}, path::Path, str::from_utf8};
 
-use crate::{error::{AnyError, IoResult}, serialize::{Serialize, json::{JsonSerializer, PrettyJsonFormatter, IntoJson}}, deserialize::{Deserialize, json::{FromJson, JsonDeserializer}}, serializer::Serializer, deserializer::Deserializer};
+use crate::{error::{AnyError, IoResult}, serialize::{Serialize, json::{JsonSerializer, PrettyJsonFormatter, IntoJson}}, deserialize::{Deserialize, json::{FromJson, JsonDeserializer}}};
 
 pub trait Persistant: Sized + Serialize + Deserialize {
     fn save(&self, path: &str) -> Result<(), AnyError>;
     fn load(path: &str) -> Result<Self, AnyError>;
 }
 
-fn serialize_with_default<S: Serialize>(value: &S, path: &Path) -> Result<Vec<u8>, AnyError> {
+fn serialize_with_default<S: Serialize>(value: &S) -> Result<Vec<u8>, AnyError> {
     let mut buffer = Vec::with_capacity(128);
     let mut ser = DefaultSerializer::new(
         PrettyJsonFormatter::new("\t".to_string()),
@@ -17,7 +17,7 @@ fn serialize_with_default<S: Serialize>(value: &S, path: &Path) -> Result<Vec<u8
     Ok(buffer)
 }
 
-fn deserialize_with_default<D: Deserialize>(value: &[u8], path: &Path) -> Result<D, AnyError> {
+fn deserialize_with_default<D: Deserialize>(value: &[u8]) -> Result<D, AnyError> {
     let mut cursor = Cursor::new(value);
     let mut des = DefaultDeserializer::new(&mut cursor);
     D::deserialize(&mut des)
@@ -28,10 +28,8 @@ fn serialize_factory<S: Serialize>(value: &S, path: &Path) -> Result<Vec<u8>, An
         if ending == "json" {
             return IntoJson::to_json(value).map(|json| json.into_bytes());
         }
-        serialize_with_default(value, path)
-    } else {
-        serialize_with_default(value, path)
     }
+    serialize_with_default(value)
 }
 
 fn deserializer_factory<D: Deserialize>(value: &[u8], path: &Path) -> Result<D, AnyError> {
@@ -39,10 +37,8 @@ fn deserializer_factory<D: Deserialize>(value: &[u8], path: &Path) -> Result<D, 
         if ending == "json" {
             return FromJson::from_json(&from_utf8(value).expect("failed to convert content to utf8"));
         }
-        deserialize_with_default(value, path)
-    } else {
-        deserialize_with_default(value, path)
     }
+    deserialize_with_default(value)
 }
 
 type DefaultSerializer<'w> = JsonSerializer<'w, Vec<u8>, PrettyJsonFormatter>;
