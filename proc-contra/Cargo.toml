@@ -1,7 +1,14 @@
 [package]
 name = "proc-contra"
-version = "0.1.0"
+version = "1.0.0"
+authors = ["Benedikt Danner <benedikt@danner.eu.com>"]
 edition = "2021"
+describition = "The proc-macros of contra"
+readme = "../README.md"
+repository = "https://github.com/Homuncoli/contra"
+license-file = "../LICENSE"
+keywords = ["xtra", "config", "serialization", "deserialization", "proc-macro"]
+categories = ["config", "encoding", "filesystem", "game-development", "game-engines"]
 
 [lib]
 proc-macro = true

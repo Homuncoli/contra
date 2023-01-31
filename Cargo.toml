@@ -1,10 +1,17 @@
 [package]
 name = "contra"
-version = "0.1.0"
+version = "1.0.0"
+authors = ["Benedikt Danner <benedikt@danner.eu.com>"]
 edition = "2021"
+describition = "A minimal serialization/deserialization library with expand persistancy functionality"
+readme = "./README.md"
+repository = "https://github.com/Homuncoli/contra"
+license-file = "./LICENSE"
+keywords = ["xtra", "config", "serialization", "deserialization"]
+categories = ["config", "encoding", "filesystem", "game-development", "game-engines"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lib-contra = { path = "./lib-contra" }
-proc-contra = { path = "./proc-contra" }
+lib-contra = { path = "./lib-contra", version = "1.0.0" }
+proc-contra = { path = "./proc-contra", version = "1.0.0" }

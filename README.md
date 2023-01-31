@@ -1,6 +1,8 @@
 # Contra
 Contra is a configuration file loader for Rust.
 
+The serialization/deserialization is heavily "inspired" (if not blatently copied) from the [serde](https://docs.rs/serde/latest/serde/) crate. My understanding of the crate was heavily improved by reading the article from [Josh Mcguigan](https://www.joshmcguigan.com/blog/understanding-serde/).
+
 ## Features
 - [x] Load literals
 - [x] Load collection of literals
