@@ -1,6 +1,6 @@
 [package]
 name = "contra"
-version = "1.0.0"
+version = "1.0.5"
 authors = ["Benedikt Danner <benedikt@danner.eu.com>"]
 edition = "2021"
 description = "A minimal serialization/deserialization library with expand persistancy functionality"
@@ -14,4 +14,4 @@ categories = ["config", "encoding", "filesystem", "game-development", "game-engi
 
 [dependencies]
 lib-contra = "1.0"
-proc-contra = "1.0"
+proc-contra = "1.0.1"
