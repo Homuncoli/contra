@@ -1,0 +1,44 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - "!master"
+
+jobs:
+  lib:
+    name: Library
+    defaults:
+      run:
+        working-directory: lib-contra
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build package
+      run: cargo test --verbose
+    - name: Run tests
+      run: cargo test --verbose
+
+  proc:
+    name: Macros
+    needs: lib
+    defaults:
+      run:
+        working-directory: proc-contra
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build package
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+
+  contra:
+    name: Crate
+    needs: proc
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    
