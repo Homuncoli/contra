@@ -1,0 +1,39 @@
+name: Build and Test
+
+on:
+  [push]
+env:
+  CARGO_TERM_COLOR: always
+jobs:
+  lib:
+    name: Build and Test the Library
+    defaults:
+      run:
+        working-directory: lib-contra
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+
+  proc:
+    name: Build and Test the Macros
+    defaults:
+      run:
+        working-directory: proc-contra
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+
+  contra:
+    name: Build and Test the crate
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
