@@ -2,6 +2,7 @@ name: Build and Test
 
 on:
   [push]
+
 env:
   CARGO_TERM_COLOR: always
 jobs:
@@ -20,6 +21,7 @@ jobs:
 
   proc:
     name: Macros
+    needs: lib
     defaults:
       run:
         working-directory: proc-contra
@@ -33,6 +35,7 @@ jobs:
 
   contra:
     name: Crate
+    needs: proc
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
