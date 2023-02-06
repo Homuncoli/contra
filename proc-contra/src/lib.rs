@@ -17,14 +17,14 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
         syn::Data::Union(_) => panic!("cannot serialize unions as of yet"),
     };
     let closing_field = ser_fields.next_back()
-        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &contra::lib_contra::position::Position::Closing )?; ))).into_iter();
+        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Closing )?; ))).into_iter();
     let trailing_fields = ser_fields
-        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &contra::lib_contra::position::Position::Trailing)?; ))).into_iter();
+        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Trailing)?; ))).into_iter();
     let ser_fields = trailing_fields.chain(closing_field.into_iter()).filter(|f| f.is_some());
 
     quote!(
-        impl contra::lib_contra::serialize::Serialize for #c_ident {
-            fn serialize<S: contra::lib_contra::serializer::Serializer>(&self, ser: &mut S, _pos: &contra::lib_contra::position::Position) -> contra::lib_contra::error::SuccessResult {
+        impl ::lib_contra::serialize::Serialize for #c_ident {
+            fn serialize<S: ::lib_contra::serializer::Serializer>(&self, ser: &mut S, _pos: &::lib_contra::position::Position) -> ::lib_contra::error::SuccessResult {
                 ser.begin_struct(stringify!(#c_ident), #n_fields)?;
 
                 #(#ser_fields)*
@@ -64,8 +64,8 @@ pub fn impl_deserialize(input: TokenStream) -> TokenStream {
     let des_fields = trailing_fields.chain(closing_field).filter(|f| f.is_some());
 
     quote!(
-        impl contra::lib_contra::deserialize::Deserialize for #c_ident {
-            fn deserialize<D: contra::lib_contra::deserializer::Deserializer>(des: &mut D) -> Result<Self, contra::lib_contra::error::AnyError> {
+        impl ::lib_contra::deserialize::Deserialize for #c_ident {
+            fn deserialize<D: ::lib_contra::deserializer::Deserializer>(des: &mut D) -> Result<Self, ::lib_contra::error::AnyError> {
                 des.deserialize_struct_begin(stringify!(#c_ident), #n_fields)?;
                 
                 #(#des_fields)*
