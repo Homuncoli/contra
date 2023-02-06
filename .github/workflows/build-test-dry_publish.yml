@@ -1,0 +1,125 @@
+name: Build and Test then try Dry Publish
+
+on:
+  pull_request:
+    types: 
+     - opened
+    branches:
+     - "master"
+     - "release/**"
+
+jobs:
+  lib:
+    name: Library
+    defaults:
+      run:
+        working-directory: lib-contra
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build package
+      run: cargo test --verbose
+    - name: Run tests
+      run: cargo test --verbose
+
+  proc:
+    name: Macros
+    needs: lib
+    defaults:
+      run:
+        working-directory: proc-contra
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build package
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+
+  contra:
+    name: Crate
+    needs: proc
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    
+  publish_lib:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lib-contra
+    needs: [contra, proc, lib]
+    steps:
+      - name: Install cargo bump
+        run: cargo install cargo-bump
+      - name: Install cargo edit
+        run: cargo install cargo-edit
+      - name: Install cargo upgrades
+        run: cargo install -f cargo-upgrades
+      - name: Increase Major Version
+        run: cargo bump major
+        if: github.ref == 'refs/heads/master'
+      - name: Increase Minor Version
+        run: cargo bump minor
+        if: github.ref != 'refs/heads/release/**'
+      - name: Publish package
+        run: "cargo publish --dry-run --token ${{ CRATE_REGISTRY_TOKEN }} --verbose"
+        env:
+          CRATE_REGISTRY_TOKEN: ${{ secrets.CRATE_REGISTRY_TOKEN }}
+  
+  publish_proc:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: proc-contra
+    needs: [publish_lib]
+    steps:
+      - name: Install cargo bump
+        run: cargo install cargo-bump
+      - name: Install cargo edit
+        run: cargo install cargo-edit
+      - name: Install cargo upgrades
+        run: cargo install -f cargo-upgrades
+      - name: Update cargo Index
+        run: cargo update
+      - name: Update dependency versions
+        run: cargo upgrade
+      - name: Increase Major Version
+        run: cargo bump major
+        if: github.ref == 'refs/heads/master'
+      - name: Increase Minor Version
+        run: cargo bump minor
+        if: github.ref != 'refs/heads/release/**'
+      - name: Publish package
+        run: "cargo publish --dry-run --token ${{ CRATE_REGISTRY_TOKEN }} --verbose"
+        env:
+          CRATE_REGISTRY_TOKEN: ${{ secrets.CRATE_REGISTRY_TOKEN }}
+
+  publish_contra:
+    runs-on: ubuntu-latest
+    needs: [publish_proc]
+    steps:
+      - name: Install cargo bump
+        run: cargo install cargo-bump
+      - name: Install cargo edit
+        run: cargo install cargo-edit
+      - name: Install cargo upgrades
+        run: cargo install -f cargo-upgrades
+      - name: Update cargo Index
+        run: cargo update
+      - name: Update dependency versions
+        run: cargo upgrade
+      - name: Increase Major Version
+        run: cargo bump major
+        if: github.ref == 'refs/heads/master'
+      - name: Increase Minor Version
+        run: cargo bump minor
+        if: github.ref != 'refs/heads/release/**'
+      - name: Publish package
+        run: "cargo publish --dry-run --token ${{ CRATE_REGISTRY_TOKEN }} --verbose"
+        env:
+          CRATE_REGISTRY_TOKEN: ${{ secrets.CRATE_REGISTRY_TOKEN }}
