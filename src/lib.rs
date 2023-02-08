@@ -1,4 +1,8 @@
-pub use lib_contra::{self, deserialize::{self, Deserialize, json::FromJson}, serialize::{self, Serialize, json::IntoJson}};
+pub use lib_contra::{
+    self,
+    deserialize::{self, json::FromJson, Deserialize},
+    serialize::{self, json::IntoJson, Serialize},
+};
 pub use proc_contra::{Deserialize, Serialize};
 
 #[cfg(test)]
