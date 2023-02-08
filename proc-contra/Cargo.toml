@@ -1,6 +1,6 @@
 [package]
 name = "proc-contra"
-version = "2.0.6"
+version = "2.0.7"
 authors = ["Benedikt Danner <benedikt@danner.eu.com>"]
 edition = "2021"
 description = "The proc-macros of contra"
