@@ -1,6 +1,6 @@
 [package]
 name = "contra"
-version = "2.0.5"
+version = "2.0.6"
 authors = ["Benedikt Danner <benedikt@danner.eu.com>"]
 edition = "2021"
 description = "A minimal serialization/deserialization library with expand persistancy functionality"
