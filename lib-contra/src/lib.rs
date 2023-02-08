@@ -1,27 +1,33 @@
-pub mod error;
-pub mod position;
-pub mod serializer;
-pub mod serialize;
-pub mod formatter;
 pub mod deserialize;
 pub mod deserializer;
+pub mod error;
+pub mod formatter;
 pub mod persistant;
+pub mod position;
+pub mod serialize;
+pub mod serializer;
 
 #[cfg(test)]
 mod test {
-    use crate::{serialize::{Serialize, json::IntoJson}, serializer::Serializer, error::SuccessResult, position::Position, deserialize::{Deserialize, json::FromJson}};
+    use crate::{
+        deserialize::{json::FromJson, Deserialize},
+        error::SuccessResult,
+        position::Position,
+        serialize::{json::IntoJson, Serialize},
+        serializer::Serializer,
+    };
 
     #[derive(Debug, PartialEq, Eq)]
     struct PrimitiveDataTypesStruct {
-        i8:   i32,
-        i16:  i16,
-        i32:  i32,
-        i64:  i64,
+        i8: i32,
+        i16: i16,
+        i32: i32,
+        i64: i64,
         i128: i128,
-        u8:   u32,
-        u16:  u16,
-        u32:  u32,
-        u64:  u64,
+        u8: u32,
+        u16: u16,
+        u32: u32,
+        u64: u64,
         u128: u128,
         usize: usize,
         isize: isize,
@@ -31,18 +37,18 @@ mod test {
     impl PrimitiveDataTypesStruct {
         fn new() -> Self {
             PrimitiveDataTypesStruct {
-                i8:     1000,
-                i16:    i16::MAX,
-                i32:    i32::MAX,
-                i64:    i64::MAX,
-                i128:   i128::MAX,
-                u8:     1000,
-                u16:    u16::MAX,
-                u32:    u32::MAX,
-                u64:    u64::MAX,
-                u128:   u128::MAX,
-                usize:  usize::MAX,
-                isize:  isize::MAX,
+                i8: 1000,
+                i16: i16::MAX,
+                i32: i32::MAX,
+                i64: i64::MAX,
+                i128: i128::MAX,
+                u8: 1000,
+                u16: u16::MAX,
+                u32: u32::MAX,
+                u64: u64::MAX,
+                u128: u128::MAX,
+                usize: usize::MAX,
+                isize: isize::MAX,
                 string: "Hello World!".to_string(),
             }
         }
@@ -73,9 +79,11 @@ mod test {
     }
 
     impl Deserialize for PrimitiveDataTypesStruct {
-        fn deserialize<D: crate::deserializer::Deserializer>(des: &mut D) -> Result<Self, crate::error::AnyError> {
+        fn deserialize<D: crate::deserializer::Deserializer>(
+            des: &mut D,
+        ) -> Result<Self, crate::error::AnyError> {
             des.deserialize_struct_begin("PrimitiveDataTypesStruct", 13)?;
-            
+
             let i8 = des.deserialize_field("i8")?;
             let i16 = des.deserialize_field("i16")?;
             let i32 = des.deserialize_field("i32")?;
@@ -105,7 +113,7 @@ mod test {
                 u128,
                 usize,
                 isize,
-                string
+                string,
             })
         }
     }

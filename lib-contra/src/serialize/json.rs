@@ -1,14 +1,14 @@
 use std::io;
 use std::mem::size_of;
 
-use crate::error::{IoResult, AnyError, SuccessResult};
+use crate::error::{AnyError, IoResult, SuccessResult};
 use crate::formatter::WriteFormatter;
 
 use crate::position::Position;
 use crate::serialize::Serialize;
-use crate::serializer::{Serializer};
+use crate::serializer::Serializer;
 
-pub trait IntoJson{
+pub trait IntoJson {
     fn to_json(&self) -> Result<String, AnyError>;
 }
 
@@ -19,7 +19,7 @@ impl<S: Serialize> IntoJson for S {
         let mut serializer = JsonSerializer::new(formatter, &mut buffer);
 
         self.serialize(&mut serializer, &Position::Closing)?;
-        
+
         unsafe { Ok(String::from_utf8_unchecked(buffer)) }
     }
 }
@@ -31,13 +31,9 @@ pub struct JsonSerializer<'w, W: io::Write, F: WriteFormatter<W>> {
 
 impl<'w, W: io::Write, F: WriteFormatter<W>> JsonSerializer<'w, W, F> {
     pub fn new(formatter: F, write: &'w mut W) -> Self {
-        Self {
-            formatter,
-            write
-        }
+        Self { formatter, write }
     }
 }
-
 
 macro_rules! impl_serialize_primitive {
     ($type: ident, $ser_func: ident, $for_func: ident) => {
@@ -50,7 +46,8 @@ macro_rules! impl_serialize_primitive {
 
 impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W, F> {
     fn begin_struct(&mut self, name: &str, fields: usize) -> SuccessResult {
-        self.formatter.write_struct_begin(self.write, name, fields)?;
+        self.formatter
+            .write_struct_begin(self.write, name, fields)?;
         Ok(())
     }
 
@@ -59,47 +56,64 @@ impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W
         Ok(())
     }
 
-    fn serialize_field<V: crate::serialize::Serialize>(&mut self, identifier: &str, value: &V, pos: &Position)-> SuccessResult {
+    fn serialize_field<V: crate::serialize::Serialize>(
+        &mut self,
+        identifier: &str,
+        value: &V,
+        pos: &Position,
+    ) -> SuccessResult {
         self.formatter.write_field_assignnment_begin(self.write)?;
         self.formatter.write_field_key(self.write, identifier)?;
-        self.formatter.write_field_assignnment_operator(self.write)?;
+        self.formatter
+            .write_field_assignnment_operator(self.write)?;
         value.serialize(self, &pos)?;
-        self.formatter.write_field_assignnment_end(self.write, &pos)?;
+        self.formatter
+            .write_field_assignnment_end(self.write, &pos)?;
         Ok(())
     }
 
-    fn serialize_value<V: crate::serialize::Serialize>(&mut self, value: &V, pos: &Position) -> SuccessResult {
+    fn serialize_value<V: crate::serialize::Serialize>(
+        &mut self,
+        value: &V,
+        pos: &Position,
+    ) -> SuccessResult {
         value.serialize(self, pos)?;
         Ok(())
     }
 
     fn begin_collection(&mut self, name: &str, size: usize) -> SuccessResult {
-        self.formatter.write_collection_begin(self.write, name, size)?;
+        self.formatter
+            .write_collection_begin(self.write, name, size)?;
         Ok(())
     }
 
-    fn end_collection(&mut self, name: &str)-> SuccessResult {
+    fn end_collection(&mut self, name: &str) -> SuccessResult {
         self.formatter.write_collection_end(self.write, name)?;
         Ok(())
     }
 
-    fn serialize_item<V: Serialize>(&mut self, _i: usize, item: &V, pos: &Position) -> SuccessResult {
+    fn serialize_item<V: Serialize>(
+        &mut self,
+        _i: usize,
+        item: &V,
+        pos: &Position,
+    ) -> SuccessResult {
         self.serialize_value(item, pos)
     }
 
-    impl_serialize_primitive!(i8,    serialize_i8,      write_i8);
-    impl_serialize_primitive!(i16,   serialize_i16,     write_i16);
-    impl_serialize_primitive!(i32,   serialize_i32,     write_i32);
-    impl_serialize_primitive!(i64,   serialize_i64,     write_i64);
-    impl_serialize_primitive!(i128,  serialize_i128,    write_i128);
-    impl_serialize_primitive!(u8  ,  serialize_u8,      write_u8);
-    impl_serialize_primitive!(u16 ,  serialize_u16,     write_u16);
-    impl_serialize_primitive!(u32 ,  serialize_u32,     write_u32);
-    impl_serialize_primitive!(u64 ,  serialize_u64,     write_u64);
-    impl_serialize_primitive!(u128,  serialize_u128,    write_u128);
-    impl_serialize_primitive!(usize, serialize_usize,   write_usize);
-    impl_serialize_primitive!(isize, serialize_isize,   write_isize);
-    impl_serialize_primitive!(str,   serialize_str,     write_str);
+    impl_serialize_primitive!(i8, serialize_i8, write_i8);
+    impl_serialize_primitive!(i16, serialize_i16, write_i16);
+    impl_serialize_primitive!(i32, serialize_i32, write_i32);
+    impl_serialize_primitive!(i64, serialize_i64, write_i64);
+    impl_serialize_primitive!(i128, serialize_i128, write_i128);
+    impl_serialize_primitive!(u8, serialize_u8, write_u8);
+    impl_serialize_primitive!(u16, serialize_u16, write_u16);
+    impl_serialize_primitive!(u32, serialize_u32, write_u32);
+    impl_serialize_primitive!(u64, serialize_u64, write_u64);
+    impl_serialize_primitive!(u128, serialize_u128, write_u128);
+    impl_serialize_primitive!(usize, serialize_usize, write_usize);
+    impl_serialize_primitive!(isize, serialize_isize, write_isize);
+    impl_serialize_primitive!(str, serialize_str, write_str);
 }
 
 pub struct PrettyJsonFormatter {
@@ -212,22 +226,22 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
         Ok(())
     }
 
-    fn write_collection_end(&mut self, write: &mut W, _name: &str)-> IoResult {
+    fn write_collection_end(&mut self, write: &mut W, _name: &str) -> IoResult {
         write.write_all(b"]")?;
         Ok(())
     }
 
-    impl_write_primitive!(i8,    write_i8);
-    impl_write_primitive!(i16,   write_i16);
-    impl_write_primitive!(i32,   write_i32);
-    impl_write_primitive!(i64,   write_i64);
-    impl_write_primitive!(i128,  write_i128);
-    impl_write_primitive!(u8  ,  write_u8);
-    impl_write_primitive!(u16 ,  write_u16);
-    impl_write_primitive!(u32 ,  write_u32);
-    impl_write_primitive!(u64 ,  write_u64);
-    impl_write_primitive!(u128,  write_u128);
+    impl_write_primitive!(i8, write_i8);
+    impl_write_primitive!(i16, write_i16);
+    impl_write_primitive!(i32, write_i32);
+    impl_write_primitive!(i64, write_i64);
+    impl_write_primitive!(i128, write_i128);
+    impl_write_primitive!(u8, write_u8);
+    impl_write_primitive!(u16, write_u16);
+    impl_write_primitive!(u32, write_u32);
+    impl_write_primitive!(u64, write_u64);
+    impl_write_primitive!(u128, write_u128);
     impl_write_primitive!(usize, write_usize);
     impl_write_primitive!(isize, write_isize);
-    impl_write_primitive!(str  , write_str);
+    impl_write_primitive!(str, write_str);
 }

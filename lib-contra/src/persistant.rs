@@ -1,6 +1,21 @@
-use std::{fs::File, io::{Write, Cursor, BufReader, Read, self}, path::Path, str::from_utf8};
+use std::{
+    fs::File,
+    io::{self, BufReader, Cursor, Read, Write},
+    path::Path,
+    str::from_utf8,
+};
 
-use crate::{error::{AnyError, IoResult}, serialize::{Serialize, json::{JsonSerializer, PrettyJsonFormatter, IntoJson}}, deserialize::{Deserialize, json::{FromJson, JsonDeserializer}}};
+use crate::{
+    deserialize::{
+        json::{FromJson, JsonDeserializer},
+        Deserialize,
+    },
+    error::{AnyError, IoResult},
+    serialize::{
+        json::{IntoJson, JsonSerializer, PrettyJsonFormatter},
+        Serialize,
+    },
+};
 
 pub trait Persistant: Sized + Serialize + Deserialize {
     fn save(&self, path: &str) -> Result<(), AnyError>;
@@ -9,10 +24,7 @@ pub trait Persistant: Sized + Serialize + Deserialize {
 
 fn serialize_with_default<S: Serialize>(value: &S) -> Result<Vec<u8>, AnyError> {
     let mut buffer = Vec::with_capacity(128);
-    let mut ser = DefaultSerializer::new(
-        PrettyJsonFormatter::new("\t".to_string()),
-        &mut buffer
-    );
+    let mut ser = DefaultSerializer::new(PrettyJsonFormatter::new("\t".to_string()), &mut buffer);
     value.serialize(&mut ser, &crate::position::Position::Closing)?;
     Ok(buffer)
 }
@@ -35,7 +47,9 @@ fn serialize_factory<S: Serialize>(value: &S, path: &Path) -> Result<Vec<u8>, An
 fn deserializer_factory<D: Deserialize>(value: &[u8], path: &Path) -> Result<D, AnyError> {
     if let Some(ending) = path.extension() {
         if ending == "json" {
-            return FromJson::from_json(&from_utf8(value).expect("failed to convert content to utf8"));
+            return FromJson::from_json(
+                &from_utf8(value).expect("failed to convert content to utf8"),
+            );
         }
     }
     deserialize_with_default(value)
@@ -76,12 +90,15 @@ fn read_bytes_file(path: &Path) -> Result<Vec<u8>, io::Error> {
 
 #[cfg(test)]
 mod test {
-    use std::{fs::{self}, path::Path};
+    use std::{
+        fs::{self},
+        path::Path,
+    };
 
     use super::Persistant;
 
     struct FileLifetime {
-        pub(crate) path: String
+        pub(crate) path: String,
     }
 
     impl Drop for FileLifetime {
@@ -89,9 +106,11 @@ mod test {
             let path = Path::new(&self.path);
             if path.exists() {
                 if !path.is_dir() {
-                    fs::remove_file(&path).expect(format!("failed to delete file: {}", self.path).as_str());
+                    fs::remove_file(&path)
+                        .expect(format!("failed to delete file: {}", self.path).as_str());
                 } else {
-                    fs::remove_dir_all(&path).expect(format!("failed to delete directory: {}", self.path).as_str());
+                    fs::remove_dir_all(&path)
+                        .expect(format!("failed to delete directory: {}", self.path).as_str());
                 }
             }
         }
@@ -99,7 +118,9 @@ mod test {
 
     #[test]
     fn save_and_then_load_works() {
-        let file_lifetime = FileLifetime { path: "save_i32.json".to_string() };
+        let file_lifetime = FileLifetime {
+            path: "save_i32.json".to_string(),
+        };
         let data = 32i32;
 
         let saved = data.save(&file_lifetime.path);
@@ -111,6 +132,5 @@ mod test {
 
         assert!(loaded.is_ok());
         assert_eq!(data, loaded.unwrap());
-
     }
 }

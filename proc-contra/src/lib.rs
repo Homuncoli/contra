@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{DeriveInput};
+use syn::DeriveInput;
 
 #[proc_macro_derive(Serialize)]
 pub fn impl_serialize(input: TokenStream) -> TokenStream {
@@ -9,10 +9,12 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
     let c_ident = ast.ident;
     let n_fields = ast.attrs.len();
     let mut ser_fields = match ast.data {
-        syn::Data::Struct(str) => str.fields.into_iter()
-                                                        .map(|f| f.ident)
-                                                        .filter(|f| f.is_some())
-                                                        .map(|f| f.unwrap()),
+        syn::Data::Struct(str) => str
+            .fields
+            .into_iter()
+            .map(|f| f.ident)
+            .filter(|f| f.is_some())
+            .map(|f| f.unwrap()),
         syn::Data::Enum(_) => panic!("cannot serialize enums as of yet"),
         syn::Data::Union(_) => panic!("cannot serialize unions as of yet"),
     };
@@ -20,7 +22,9 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
         .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Closing )?; ))).into_iter();
     let trailing_fields = ser_fields
         .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Trailing)?; ))).into_iter();
-    let ser_fields = trailing_fields.chain(closing_field.into_iter()).filter(|f| f.is_some());
+    let ser_fields = trailing_fields
+        .chain(closing_field.into_iter())
+        .filter(|f| f.is_some());
 
     quote!(
         impl ::lib_contra::serialize::Serialize for #c_ident {
@@ -37,10 +41,6 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
     ).into()
 }
 
-
-
-
-
 #[proc_macro_derive(Deserialize)]
 pub fn impl_deserialize(input: TokenStream) -> TokenStream {
     let ast = syn::parse_macro_input!(input as DeriveInput);
@@ -48,19 +48,24 @@ pub fn impl_deserialize(input: TokenStream) -> TokenStream {
     let c_ident = ast.ident;
     let n_fields = ast.attrs.len();
     let field_idents = match ast.data {
-        syn::Data::Struct(str) => str.fields.into_iter()
-                                                        .map(|f| f.ident)
-                                                        .filter(|f| f.is_some())
-                                                        .map(|f| f.unwrap()),
+        syn::Data::Struct(str) => str
+            .fields
+            .into_iter()
+            .map(|f| f.ident)
+            .filter(|f| f.is_some())
+            .map(|f| f.unwrap()),
         syn::Data::Enum(_) => panic!("cannot deserialize enums as of yet"),
         syn::Data::Union(_) => panic!("cannot deserialize unions as of yet"),
     };
 
     let mut des_fields = field_idents.clone();
-    let closing_field = des_fields.next_back()
-        .map(|f| Some(quote!(let #f = des.deserialize_field(stringify!(#f))?;))).into_iter();
+    let closing_field = des_fields
+        .next_back()
+        .map(|f| Some(quote!(let #f = des.deserialize_field(stringify!(#f))?;)))
+        .into_iter();
     let trailing_fields = des_fields
-        .map(|f| Some(quote!(let #f = des.deserialize_field(stringify!(#f))?;))).into_iter();
+        .map(|f| Some(quote!(let #f = des.deserialize_field(stringify!(#f))?;)))
+        .into_iter();
     let des_fields = trailing_fields.chain(closing_field).filter(|f| f.is_some());
 
     quote!(

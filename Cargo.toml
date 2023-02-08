@@ -15,3 +15,9 @@ categories = ["config", "encoding", "filesystem", "game-development", "game-engi
 [dependencies]
 lib-contra = "1.0"
 proc-contra = "1.1.1"
+
+[workspace]
+members = [
+    "lib-contra",
+    "proc-contra",
+]

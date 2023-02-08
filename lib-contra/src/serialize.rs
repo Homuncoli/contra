@@ -1,4 +1,4 @@
-use crate::{error::{SuccessResult}, serializer::Serializer, position::Position};
+use crate::{error::SuccessResult, position::Position, serializer::Serializer};
 
 pub mod json;
 
@@ -18,19 +18,19 @@ macro_rules! impl_serialize_primitive {
     };
 }
 
-impl_serialize_primitive!(i8  ,  serialize_i8);
-impl_serialize_primitive!(i16 ,  serialize_i16);
-impl_serialize_primitive!(i32 ,  serialize_i32);
-impl_serialize_primitive!(i64 ,  serialize_i64);
-impl_serialize_primitive!(i128,  serialize_i128);
-impl_serialize_primitive!(u8  ,  serialize_u8);
-impl_serialize_primitive!(u16 ,  serialize_u16);
-impl_serialize_primitive!(u32 ,  serialize_u32);
-impl_serialize_primitive!(u64 ,  serialize_u64);
-impl_serialize_primitive!(u128,  serialize_u128);
+impl_serialize_primitive!(i8, serialize_i8);
+impl_serialize_primitive!(i16, serialize_i16);
+impl_serialize_primitive!(i32, serialize_i32);
+impl_serialize_primitive!(i64, serialize_i64);
+impl_serialize_primitive!(i128, serialize_i128);
+impl_serialize_primitive!(u8, serialize_u8);
+impl_serialize_primitive!(u16, serialize_u16);
+impl_serialize_primitive!(u32, serialize_u32);
+impl_serialize_primitive!(u64, serialize_u64);
+impl_serialize_primitive!(u128, serialize_u128);
 impl_serialize_primitive!(usize, serialize_usize);
 impl_serialize_primitive!(isize, serialize_isize);
-impl_serialize_primitive!(String,serialize_str);
+impl_serialize_primitive!(String, serialize_str);
 
 impl Serialize for &str {
     fn serialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
@@ -45,11 +45,11 @@ impl<Item: Serialize> Serialize for Vec<Item> {
 
         let mut iter = self.iter();
         let closing_item = iter.next_back();
-        for (i,trailing_item) in iter.enumerate() {
+        for (i, trailing_item) in iter.enumerate() {
             ser.serialize_item(i, trailing_item, &Position::Trailing)?;
         }
         if closing_item.is_some() {
-            ser.serialize_item(self.len()-1, closing_item.unwrap(), &Position::Closing)?;
+            ser.serialize_item(self.len() - 1, closing_item.unwrap(), &Position::Closing)?;
         }
 
         ser.end_collection(stringify!(Vec<Item>))?;
