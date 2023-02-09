@@ -1,6 +1,6 @@
 [package]
 name = "proc-contra"
-version = "2.0.10"
+version = "2.0.11"
 authors = ["Benedikt Danner <benedikt@danner.eu.com>"]
 edition = "2021"
 description = "The proc-macros of contra"
@@ -17,3 +17,4 @@ proc-macro = true
 [dependencies]
 quote = "1.0"
 syn = "1.0"
+lib-contra = "2.0.9"
