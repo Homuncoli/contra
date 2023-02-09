@@ -13,15 +13,11 @@ categories = ["config", "encoding", "filesystem", "game-development", "game-engi
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lib-contra = { workspace = true }
-proc-contra = { workspace = true }
+lib-contra = "2.0.11"
+proc-contra = "2.0.11"
 
 [workspace]
 members = [
     "lib-contra",
     "proc-contra",
 ]
-
-[workspace.dependencies]
-lib-contra = "2.0.9"
-proc-contra = "2.0.9"
