@@ -1,6 +1,6 @@
 [package]
 name = "contra"
-version = "2.0.9"
+version = "2.0.10"
 authors = ["Benedikt Danner <benedikt@danner.eu.com>"]
 edition = "2021"
 description = "A minimal serialization/deserialization library with expand persistancy functionality"
@@ -13,8 +13,8 @@ categories = ["config", "encoding", "filesystem", "game-development", "game-engi
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lib-contra = { path = "./lib-contra" }
-proc-contra = { path = "./proc-contra" }
+lib-contra = "2.0.9"
+proc-contra = "2.0.9"
 
 [workspace]
 members = [
