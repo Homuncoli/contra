@@ -7,6 +7,7 @@ pub mod position;
 pub mod serialize;
 pub mod serializer;
 
+
 #[cfg(test)]
 mod test {
     use crate::{

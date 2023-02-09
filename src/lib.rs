@@ -5,6 +5,7 @@ pub use lib_contra::{
 };
 pub use proc_contra::{Deserialize, Serialize};
 
+
 #[cfg(test)]
 mod test {
     use lib_contra::{deserialize::json::FromJson, serialize::json::IntoJson};
