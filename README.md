@@ -1,5 +1,6 @@
 # Contra
-![publish](https://github.com/Homuncoli/contra/workflows/publish.yml/badge.svg)
+![publish](https://github.com/Homuncoli/contra/actions/workflows/publish.yml/badge.svg)
+
 Contra is a configuration file loader for Rust.
 
 The serialization/deserialization is heavily "inspired" (if not blatently copied) from the [serde](https://docs.rs/serde/latest/serde/) crate. My understanding of the crate was heavily improved by reading the article from [Josh Mcguigan](https://www.joshmcguigan.com/blog/understanding-serde/).
