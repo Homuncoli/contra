@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  push:
+    branches:
+     - "master"
+
+jobs:
+  publish_lib:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lib-contra
+    steps:
+      - name: Install cargo workspaces
+        run: cargo install cargo-workspaces
+      - name: "Determine version bump: patch" 
+        run: echo "{BUMP}={patch}" >> $GITHUB_ENV
+        if: github.ref_name = 'hotfix/**'
+      - name: "Determine version bump: minor" 
+        run: echo "{BUMP}={minor}" >> $GITHUB_ENV
+        if: github.ref_name = 'feat/**'
+      - name: "Determine version bump: major" 
+        run: echo "{BUMP}={major}" >> $GITHUB_ENV
+        if: github.ref_name = 'release/**'
+      - name: Publish
+        run: "cargo ws publish ${{ env.BUMP }} -a --force * -y --no-individual-tags --amend"
+        env:
+          CRATE_REGISTRY_TOKEN: ${{ secrets.CRATE_REGISTRY_TOKEN }}
