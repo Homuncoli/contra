@@ -13,8 +13,8 @@ categories = ["config", "encoding", "filesystem", "game-development", "game-engi
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lib-contra = { version = "4.0.0" }
-proc-contra = { version = "4.0.0" }
+lib-contra = { version = "4.0.0", path = "./lib-contra" }
+proc-contra = { version = "4.0.0", path = "./proc-contra" }
 
 [workspace]
 members = [
