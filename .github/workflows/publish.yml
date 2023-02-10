@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  push:
+    branches:
+     - "master"
+
+jobs:
+  publish_lib:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-workspaces
+          version: latest
+      - name: "Determine version bump: patch" 
+        run: echo "{BUMP}={patch}" >> $GITHUB_ENV
+        if: contains(github.event.head_commit.message, 'hotfix/')
+      - name: "Determine version bump: minor" 
+        run: echo "{BUMP}={minor}" >> $GITHUB_ENV
+        if: contains(github.event.head_commit.message, 'feat/')
+      - name: "Determine version bump: major" 
+        run: echo "{BUMP}={major}" >> $GITHUB_ENV
+        if: contains(github.event.head_commit.message, 'release/')
+      - name: Publish
+        run: "cargo ws publish ${{ env.BUMP }} -a --force * -y --no-individual-tags --amend"
+        env:
+          CRATE_REGISTRY_TOKEN: ${{ secrets.CRATE_REGISTRY_TOKEN }}
