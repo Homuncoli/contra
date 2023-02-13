@@ -13,6 +13,9 @@ categories = ["config", "encoding", "filesystem", "game-development", "game-engi
 [lib]
 proc-macro = true
 
+[dev-dependencies]
+lib-contra = { version = "=4.13.4", path = "../lib-contra" }
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 quote = "1.0"

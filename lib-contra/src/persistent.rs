@@ -21,25 +21,6 @@ use crate::{
 /// Allow saving and loading to/from disk
 /// 
 /// Automatically implemented for types that implement both [Serialize] and [Deserialize]
-/// # Example
-/// ```
-/// use contra::lib_contra::persistent::Persistent;
-/// 
-/// #[derive(Serialize, Deserialize)]
-/// struct Point {
-///     x f32,
-///     y: f32,
-///     z: f32,
-/// }
-/// 
-/// fn modify_point() -> Result<(), Box<dyn std::error::Error>> {
-///     let p = Point::load("path/to/point.json")?;
-///     assert_eq!(p.x, 1.0f32);
-///     p.x = 2.0f32;
-///     p.save("path/to/point.json")?;
-///     Ok(())
-/// }
-/// ```
 pub trait Persistent: Serialize + Deserialize {
     fn save(&self, path: &str) -> Result<(), AnyError>;
     fn load(path: &str) -> Result<Self, AnyError>;

@@ -7,8 +7,8 @@
 //!
 //! # Examples
 //! ```
-//! use contra::{Serialize, Deserialize};
-//! use lib_contra::persistent::Persistent;
+//! use proc_contra::{Serialize, Deserialize};
+//! use lib_contra::{error::SuccessResult, position::Position, persistent::Persistent};
 //! 
 //! #[derive(Serialize, Deserialize)]
 //! struct Point {
@@ -18,7 +18,7 @@
 //! }
 //!
 //! fn modify_point() -> Result<(), Box<dyn std::error::Error>> {
-//!     let p = Point::load("path/to/point.json")?;
+//!     let mut p = Point::load("path/to/point.json")?;
 //!     assert_eq!(p.x, 1.0f32);
 //!     p.x = 2.0f32;
 //!     p.save("path/to/point.json")?;

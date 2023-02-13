@@ -10,24 +10,24 @@ pub mod json;
 /// Best to not implemented by hand but rather derived via the Deserialize derive macro of the [proc_contra](https://docs.rs/proc_contra/) crate.
 /// See: [Contra](https://docs.rs/contra/)
 /// ```
+/// use crate::{lib_contra::{deserialize::Deserialize, position::Position, deserializer::Deserializer, error::AnyError}};
+/// 
 /// struct Point {
 ///     x: f32,
 ///     y: f32,
-///     y: f32
+///     z: f32
 /// }
 ///
-/// impl Point { ... }
-///
 /// impl Deserialize for Point {
-///     fn deserialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
-///         ser.begin_struct("Point", 3)?;
-///
-///         ser.serialize_field("x", &self.x, &Position::Trailing)?;
-///         ser.serialize_field("y", &self.y, &Position::Trailing)?;
-///         ser.serialize_field("z", &self.z, &Position::Closing)?;
-///
-///         ser.end_struct("Point")?;
-///         Ok(())
+///     fn deserialize<D: Deserializer>(des: &mut D) -> Result<Self, AnyError> {
+///         des.deserialize_struct_begin("Point", 3)?;
+///     
+///         let x = des.deserialize_field("x")?;
+///         let y = des.deserialize_field("y")?;
+///         let z = des.deserialize_field("z")?;
+/// 
+///         des.deserialize_struct_end("Point")?;
+///         Ok(Self { x, y, z })
 ///     }
 /// }
 /// ```

@@ -10,23 +10,33 @@ use syn::DeriveInput;
 ///
 /// # Example
 /// ```
-/// #derive(Serialize)
+/// use proc_contra::Serialize;
+/// 
+/// #[derive(Serialize)]
 /// struct Point {
 ///     x: f32,
 ///     y: f32,
-///     y: f32
+///     z: f32
 /// }
 /// ```
 ///
 /// Expands into:
 /// ```
+/// use lib_contra::{serialize::Serialize, serializer::Serializer, position::Position, error::SuccessResult};
+/// 
+/// struct Point {
+///     x: f32,
+///     y: f32,
+///     z: f32
+/// }
+/// 
 /// impl Serialize for Point {
 ///     fn serialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
 ///         ser.begin_struct("Point", 3)?;
 ///     
-///         ser.serialize_field("x", &self.i8, &Position::Trailing)?;
-///         ser.serialize_field("y", &self.i8, &Position::Trailing)?;
-///         ser.serialize_field("z", &self.i8, &Position::Closing)?;
+///         ser.serialize_field("x", &self.x, &Position::Trailing)?;
+///         ser.serialize_field("y", &self.y, &Position::Trailing)?;
+///         ser.serialize_field("z", &self.z, &Position::Closing)?;
 ///     
 ///         ser.end_struct("Point")?;
 ///     
@@ -78,26 +88,36 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
 ///
 /// # Example
 /// ```
-/// #derive(Deserialize)
+/// use proc_contra::Deserialize;
+/// use lib_contra::{deserialize::Deserialize, position::Position, deserializer::Deserializer, error::AnyError};
+/// #[derive(Deserialize)]
 /// struct Point {
 ///     x: f32,
 ///     y: f32,
-///     y: f32
+///     z: f32
 /// }
 /// ```
 ///
 /// Expands into:
 /// ```
+/// use lib_contra::{deserialize::Deserialize, position::Position, deserializer::Deserializer, error::AnyError};
+/// 
+/// struct Point {
+///     x: f32,
+///     y: f32,
+///     z: f32
+/// }
+/// 
 /// impl Deserialize for Point {
-///     fn deserialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
-///         ser.begin_struct("Point", 3)?;
-///
-///         ser.serialize_field("x", &self.x, &Position::Trailing)?;
-///         ser.serialize_field("y", &self.y, &Position::Trailing)?;
-///         ser.serialize_field("z", &self.z, &Position::Closing)?;
-///
-///         ser.end_struct("Point")?;
-///         Ok(())
+///     fn deserialize<D: Deserializer>(des: &mut D) -> Result<Self, AnyError> {
+///         des.deserialize_struct_begin("Point", 3)?;
+///     
+///         let x = des.deserialize_field("x")?;
+///         let y = des.deserialize_field("y")?;
+///         let z = des.deserialize_field("z")?;
+/// 
+///         des.deserialize_struct_end("Point")?;
+///         Ok(Self { x, y, z })
 ///     }
 /// }
 /// ```
