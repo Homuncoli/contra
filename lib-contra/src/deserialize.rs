@@ -26,6 +26,8 @@ impl_deserialize_primitive!(u16, deserialize_u16);
 impl_deserialize_primitive!(u32, deserialize_u32);
 impl_deserialize_primitive!(u64, deserialize_u64);
 impl_deserialize_primitive!(u128, deserialize_u128);
+impl_deserialize_primitive!(f32, deserialize_f32);
+impl_deserialize_primitive!(f64, deserialize_f64);
 impl_deserialize_primitive!(usize, deserialize_usize);
 impl_deserialize_primitive!(isize, deserialize_isize);
 impl_deserialize_primitive!(String, deserialize_string);
