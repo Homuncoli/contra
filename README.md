@@ -3,20 +3,28 @@
 
 Contra is a configuration file loader for Rust.
 
-The serialization/deserialization is heavily "inspired" (if not blatently copied) from the [serde](https://docs.rs/serde/latest/serde/) crate. My understanding of the crate was heavily improved by reading the article from [Josh Mcguigan](https://www.joshmcguigan.com/blog/understanding-serde/).
+The serialization/deserialization is heavily "inspired" (if not blatantly copied) from the [serde](https://docs.rs/serde/latest/serde/) crate. Special thanks to 'Josh Mcguigan' and his very helpful article [Understanding-serde](https://www.joshmcguigan.com/blog/understanding-serde/).
 
 ## Features
-- [x] Load literals
-- [x] Load collection of literals
-- [x] Load nested structs
-- [x] Load collection of structs
-- [ ] \(Optional) Support multiple File Formats
+- [x] Load and save literals
+  - [x] string literals
+  - [x] numeric literals
+- [x] Load and save structs
+  - [x] primitive structs
+  - [x] nested structs
+- [x] Load collections
+  - [x] vectors
+  - [ ] maps
+- [ ] Support multiple File Formats
+  - [ ] JSON
+  - [ ] TOML
+  - [ ] Cfg
 
 ## Usuage
 Contra adds the derive macro: *Serialize*   which implements the *serialize* method for the given struct.
 Contra adds the derive macro: *Deserialize* which implements the *deserialize* method for the given struct.
-These functions are best used via the *Persistant* trait which automatically implemented for all struct that are both Serializable, and Deserializable.
-The *Persistant trait* provides the functions *load* and *save*, which selects the appropiate serializer/deserializer based on the *path* given as parameter.
+These functions are best used via the *Persistent* trait which automatically implemented for all struct that are both Serializable, and Deserializable.
+The *Persistent trait* provides the functions *load* and *save*, which selects the appropiate serializer/deserializer based on the *path* given as parameter.
 
 ## Example
 ```rust
