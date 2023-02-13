@@ -6,6 +6,10 @@ macro_rules! decl_serialize_primitive {
     };
 }
 
+/// Handles the serialization and formatting of an arbitrary serializable
+///
+/// Any Serializer must implement methods that allow for the serialization of all supported data types.
+/// These methods are then called in the implementation (most often derived) of the [Serialize](crate::serialize::Serialize) trait.
 pub trait Serializer {
     fn begin_struct(&mut self, name: &str, fields: usize) -> SuccessResult;
     fn end_struct(&mut self, name: &str) -> SuccessResult;
