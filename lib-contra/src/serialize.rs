@@ -10,21 +10,20 @@ pub mod json;
 /// Best to not implemented by hand but rather derived via the Serialize derive macro of the [proc_contra](https://docs.rs/proc_contra/) crate.
 /// See: [Contra](https://docs.rs/contra/)
 /// ```
+/// use crate::{lib_contra::{serialize::Serialize, serializer::Serializer, position::Position, error::SuccessResult}};
 /// struct Point {
 ///     x: f32,
 ///     y: f32,
-///     y: f32
+///     z: f32
 /// }
-///
-/// impl Point { ... }
 ///
 /// impl Serialize for Point {
 ///     fn serialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
 ///         ser.begin_struct("Point", 3)?;
 ///     
-///         ser.serialize_field("x", &self.i8, &Position::Trailing)?;
-///         ser.serialize_field("y", &self.i8, &Position::Trailing)?;
-///         ser.serialize_field("z", &self.i8, &Position::Closing)?;
+///         ser.serialize_field("x", &self.x, &Position::Trailing)?;
+///         ser.serialize_field("y", &self.y, &Position::Trailing)?;
+///         ser.serialize_field("z", &self.z, &Position::Closing)?;
 ///     
 ///         ser.end_struct("Point")?;
 ///     
