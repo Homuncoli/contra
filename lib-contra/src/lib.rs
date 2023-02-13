@@ -1,12 +1,15 @@
+//! Function implementation for [contra](https://docs.rs/contra)
+//!
+//! Provides the function and traits needed for the serialization and deserialization of any arbitrary object.
+
 pub mod deserialize;
 pub mod deserializer;
 pub mod error;
 pub mod formatter;
-pub mod persistant;
+pub mod persistent;
 pub mod position;
 pub mod serialize;
 pub mod serializer;
-
 
 #[cfg(test)]
 mod test {

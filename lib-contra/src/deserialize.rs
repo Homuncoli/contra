@@ -2,6 +2,35 @@ use crate::{deserializer::Deserializer, error::AnyError};
 
 pub mod json;
 
+/// Allows for the deserialization of the implemented type
+///
+/// Implementors must provide the functionality to construct *Self* into from any [Deserializer].
+///
+/// # Example
+/// Best to not implemented by hand but rather derived via the Deserialize derive macro of the [proc_contra](https://docs.rs/proc_contra/) crate.
+/// See: [Contra](https://docs.rs/contra/)
+/// ```
+/// struct Point {
+///     x: f32,
+///     y: f32,
+///     y: f32
+/// }
+///
+/// impl Point { ... }
+///
+/// impl Deserialize for Point {
+///     fn deserialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
+///         ser.begin_struct("Point", 3)?;
+///
+///         ser.serialize_field("x", &self.x, &Position::Trailing)?;
+///         ser.serialize_field("y", &self.y, &Position::Trailing)?;
+///         ser.serialize_field("z", &self.z, &Position::Closing)?;
+///
+///         ser.end_struct("Point")?;
+///         Ok(())
+///     }
+/// }
+/// ```
 pub trait Deserialize: Sized {
     fn deserialize<D: Deserializer>(des: &mut D) -> Result<Self, AnyError>;
 }

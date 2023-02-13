@@ -2,6 +2,36 @@ use crate::{error::SuccessResult, position::Position, serializer::Serializer};
 
 pub mod json;
 
+/// Allows for the serialization of the implemented type
+///
+/// Implementors must provide the functionality to write *self* into any [Serializer].
+///
+/// # Example
+/// Best to not implemented by hand but rather derived via the Serialize derive macro of the [proc_contra](https://docs.rs/proc_contra/) crate.
+/// See: [Contra](https://docs.rs/contra/)
+/// ```
+/// struct Point {
+///     x: f32,
+///     y: f32,
+///     y: f32
+/// }
+///
+/// impl Point { ... }
+///
+/// impl Serialize for Point {
+///     fn serialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
+///         ser.begin_struct("Point", 3)?;
+///     
+///         ser.serialize_field("x", &self.i8, &Position::Trailing)?;
+///         ser.serialize_field("y", &self.i8, &Position::Trailing)?;
+///         ser.serialize_field("z", &self.i8, &Position::Closing)?;
+///     
+///         ser.end_struct("Point")?;
+///     
+///         Ok(())
+///     }
+/// }
+/// ```
 pub trait Serialize: Sized {
     fn serialize<S: Serializer>(&self, ser: &mut S, pos: &Position) -> SuccessResult;
 }

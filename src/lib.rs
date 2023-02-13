@@ -1,10 +1,37 @@
+//! Lightweight and easy to use serialization, deserialization.
+//!
+//! Provides abstract serialization into specific formats.
+//! Additionally provides the functionality to save and load the serialized content directly from and to disk.
+//!
+//! To implement more data formats see: [Serializer](self::lib_contra::serializer::Serializer), [Deserializer](self::lib_contra::deserializer::Deserializer)
+//!
+//! # Examples
+//! ```
+//! use contra::{Serialize, Deserialize};
+//! use lib_contra::persistent::Persistent;
+//! 
+//! #[derive(Serialize, Deserialize)]
+//! struct Point {
+//!     x: f32,
+//!     y: f32,
+//!     z: f32
+//! }
+//!
+//! fn modify_point() -> Result<(), Box<dyn std::error::Error>> {
+//!     let p = Point::load("path/to/point.json")?;
+//!     assert_eq!(p.x, 1.0f32);
+//!     p.x = 2.0f32;
+//!     p.save("path/to/point.json")?;
+//!     Ok(())
+//! }
+//! ```
+
 pub use lib_contra::{
     self,
     deserialize::{self, json::FromJson, Deserialize},
     serialize::{self, json::IntoJson, Serialize},
 };
 pub use proc_contra::{Deserialize, Serialize};
-
 
 #[cfg(test)]
 mod test {

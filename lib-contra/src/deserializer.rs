@@ -9,6 +9,10 @@ macro_rules! decl_deserialize_primitive {
     };
 }
 
+/// Handles the deserialization and parsing of an arbitrary serializable
+///
+/// Any Deserializer must implement methods that allow for the deserialization of all supported data types.
+/// These methods are then called in the implementation (most often derived) of the [Deserialize](crate::deserialize::Deserialize) trait.
 pub trait Deserializer {
     fn deserialize_struct_begin(&mut self, name: &str, fields: usize) -> SuccessResult;
     fn deserialize_struct_end(&mut self, name: &str) -> SuccessResult;
