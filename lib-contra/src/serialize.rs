@@ -28,6 +28,8 @@ impl_serialize_primitive!(u16, serialize_u16);
 impl_serialize_primitive!(u32, serialize_u32);
 impl_serialize_primitive!(u64, serialize_u64);
 impl_serialize_primitive!(u128, serialize_u128);
+impl_serialize_primitive!(f32, serialize_f32);
+impl_serialize_primitive!(f64, serialize_f64);
 impl_serialize_primitive!(usize, serialize_usize);
 impl_serialize_primitive!(isize, serialize_isize);
 impl_serialize_primitive!(String, serialize_str);

@@ -212,6 +212,8 @@ impl<R: io::Read + io::Seek> ReadFormatter<R> for JsonFormatter {
     impl_read_primitive!(u32, read_u32);
     impl_read_primitive!(u64, read_u64);
     impl_read_primitive!(u128, read_u128);
+    impl_read_primitive!(f32, read_f32);
+    impl_read_primitive!(f64, read_f64);
     impl_read_primitive!(usize, read_usize);
     impl_read_primitive!(isize, read_isize);
     impl_read_primitive!(String, read_string);
@@ -284,6 +286,8 @@ impl<'r, R: io::Read + io::Seek> Deserializer for JsonDeserializer<'r, R> {
     impl_deserialize_primitive!(u32, deserialize_u32, read_u32);
     impl_deserialize_primitive!(u64, deserialize_u64, read_u64);
     impl_deserialize_primitive!(u128, deserialize_u128, read_u128);
+    impl_deserialize_primitive!(f32, deserialize_f32, read_f32);
+    impl_deserialize_primitive!(f64, deserialize_f64, read_f64);
     impl_deserialize_primitive!(usize, deserialize_usize, read_usize);
     impl_deserialize_primitive!(isize, deserialize_isize, read_isize);
     impl_deserialize_primitive!(String, deserialize_string, read_string);
