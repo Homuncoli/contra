@@ -1,8 +1,40 @@
+//! Macro implementations for [contra](https://docs.rs/contra)
+//!
+//! Provides the derive macros for the serialization and deserialization of any arbitrary object.
+
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
 
-
+/// Derives the *Serialize* trait implementation
+///
+/// # Example
+/// ```
+/// #derive(Serialize)
+/// struct Point {
+///     x: f32,
+///     y: f32,
+///     y: f32
+/// }
+/// ```
+///
+/// Expands into:
+/// ```
+/// impl Serialize for Point {
+///     fn serialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
+///         ser.begin_struct("Point", 3)?;
+///     
+///         ser.serialize_field("x", &self.i8, &Position::Trailing)?;
+///         ser.serialize_field("y", &self.i8, &Position::Trailing)?;
+///         ser.serialize_field("z", &self.i8, &Position::Closing)?;
+///     
+///         ser.end_struct("Point")?;
+///     
+///         Ok(())
+///     }
+/// }
+/// ```
+///
 #[proc_macro_derive(Serialize)]
 pub fn impl_serialize(input: TokenStream) -> TokenStream {
     let ast = syn::parse_macro_input!(input as DeriveInput);
@@ -42,6 +74,33 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
     ).into()
 }
 
+/// Derives the *Deserialize* trait implementation
+///
+/// # Example
+/// ```
+/// #derive(Deserialize)
+/// struct Point {
+///     x: f32,
+///     y: f32,
+///     y: f32
+/// }
+/// ```
+///
+/// Expands into:
+/// ```
+/// impl Deserialize for Point {
+///     fn deserialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
+///         ser.begin_struct("Point", 3)?;
+///
+///         ser.serialize_field("x", &self.x, &Position::Trailing)?;
+///         ser.serialize_field("y", &self.y, &Position::Trailing)?;
+///         ser.serialize_field("z", &self.z, &Position::Closing)?;
+///
+///         ser.end_struct("Point")?;
+///         Ok(())
+///     }
+/// }
+/// ```
 #[proc_macro_derive(Deserialize)]
 pub fn impl_deserialize(input: TokenStream) -> TokenStream {
     let ast = syn::parse_macro_input!(input as DeriveInput);
