@@ -19,7 +19,7 @@
 //!
 //! fn modify_point() -> Result<(), Box<dyn std::error::Error>> {
 //!     let p = Point::load("path/to/point.json")?;
-//!     assert(p.x, 1.0f32);
+//!     assert_eq!(p.x, 1.0f32);
 //!     p.x = 2.0f32;
 //!     p.save("path/to/point.json")?;
 //!     Ok(())
