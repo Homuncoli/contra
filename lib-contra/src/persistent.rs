@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-pub trait Persistant: Sized + Serialize + Deserialize {
+pub trait Persistent: Sized + Serialize + Deserialize {
     fn save(&self, path: &str) -> Result<(), AnyError>;
     fn load(path: &str) -> Result<Self, AnyError>;
 }
@@ -58,7 +58,7 @@ fn deserializer_factory<D: Deserialize>(value: &[u8], path: &Path) -> Result<D, 
 type DefaultSerializer<'w> = JsonSerializer<'w, Vec<u8>, PrettyJsonFormatter>;
 type DefaultDeserializer<'w> = JsonDeserializer<'w, Cursor<&'w [u8]>>;
 
-impl<T: Sized + Serialize + Deserialize> Persistant for T {
+impl<T: Sized + Serialize + Deserialize> Persistent for T {
     fn save(&self, path: &str) -> Result<(), AnyError> {
         let path = Path::new(path);
         let buffer = serialize_factory(self, path)?;
@@ -95,7 +95,7 @@ mod test {
         path::Path,
     };
 
-    use super::Persistant;
+    use super::Persistent;
 
     struct FileLifetime {
         pub(crate) path: String,
