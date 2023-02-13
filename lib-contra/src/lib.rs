@@ -64,7 +64,7 @@ mod test {
 
     impl Serialize for PrimitiveDataTypesStruct {
         fn serialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
-            ser.begin_struct("PrimitiveDataTypesStruct", 13)?;
+            ser.begin_struct("PrimitiveDataTypesStruct", 15)?;
 
             ser.serialize_field("i8", &self.i8, &Position::Trailing)?;
             ser.serialize_field("i16", &self.i16, &Position::Trailing)?;
@@ -76,6 +76,8 @@ mod test {
             ser.serialize_field("u32", &self.u32, &Position::Trailing)?;
             ser.serialize_field("u64", &self.u64, &Position::Trailing)?;
             ser.serialize_field("u128", &self.u128, &Position::Trailing)?;
+            ser.serialize_field("f32", &self.f32, &Position::Trailing)?;
+            ser.serialize_field("f64", &self.f64, &Position::Trailing)?;
             ser.serialize_field("usize", &self.usize, &Position::Trailing)?;
             ser.serialize_field("usize", &self.isize, &Position::Trailing)?;
             ser.serialize_field("string", &self.string, &Position::Closing)?;
@@ -90,7 +92,7 @@ mod test {
         fn deserialize<D: crate::deserializer::Deserializer>(
             des: &mut D,
         ) -> Result<Self, crate::error::AnyError> {
-            des.deserialize_struct_begin("PrimitiveDataTypesStruct", 13)?;
+            des.deserialize_struct_begin("PrimitiveDataTypesStruct", 15)?;
 
             let i8 = des.deserialize_field("i8")?;
             let i16 = des.deserialize_field("i16")?;
