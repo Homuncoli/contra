@@ -33,6 +33,8 @@ pub trait WriteFormatter<W: io::Write> {
     decl_write_primitive!(u32, write_u32);
     decl_write_primitive!(u64, write_u64);
     decl_write_primitive!(u128, write_u128);
+    decl_write_primitive!(f32, write_f32);
+    decl_write_primitive!(f64, write_f64);
     decl_write_primitive!(usize, write_usize);
     decl_write_primitive!(isize, write_isize);
     decl_write_primitive!(str, write_str);
@@ -65,6 +67,8 @@ pub trait ReadFormatter<R: io::Read + io::Seek> {
     decl_read_primitive!(u16, read_u16);
     decl_read_primitive!(u32, read_u32);
     decl_read_primitive!(u64, read_u64);
+    decl_read_primitive!(f32, read_f32);
+    decl_read_primitive!(f64, read_f64);
     decl_read_primitive!(u128, read_u128);
     decl_read_primitive!(usize, read_usize);
     decl_read_primitive!(isize, read_isize);

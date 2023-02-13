@@ -21,7 +21,7 @@ mod test {
         serializer::Serializer,
     };
 
-    #[derive(Debug, PartialEq, Eq)]
+    #[derive(Debug, PartialEq)]
     struct PrimitiveDataTypesStruct {
         i8: i32,
         i16: i16,
@@ -36,6 +36,8 @@ mod test {
         usize: usize,
         isize: isize,
         string: String,
+        f32: f32,
+        f64: f64,
     }
 
     impl PrimitiveDataTypesStruct {
@@ -51,6 +53,8 @@ mod test {
                 u32: u32::MAX,
                 u64: u64::MAX,
                 u128: u128::MAX,
+                f32: f32::MAX,
+                f64: f64::MAX,
                 usize: usize::MAX,
                 isize: isize::MAX,
                 string: "Hello World!".to_string(),
@@ -98,6 +102,8 @@ mod test {
             let u32 = des.deserialize_field("u32")?;
             let u64 = des.deserialize_field("u64")?;
             let u128 = des.deserialize_field("u128")?;
+            let f32 = des.deserialize_field("f32")?;
+            let f64 = des.deserialize_field("f64")?;
             let usize = des.deserialize_field("usize")?;
             let isize = des.deserialize_field("usize")?;
             let string = des.deserialize_field("string")?;
@@ -115,6 +121,8 @@ mod test {
                 u32,
                 u64,
                 u128,
+                f32,
+                f64,
                 usize,
                 isize,
                 string,

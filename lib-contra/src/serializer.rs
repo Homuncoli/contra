@@ -40,6 +40,8 @@ pub trait Serializer {
     decl_serialize_primitive!(u32, serialize_u32);
     decl_serialize_primitive!(u64, serialize_u64);
     decl_serialize_primitive!(u128, serialize_u128);
+    decl_serialize_primitive!(f32, serialize_f32);
+    decl_serialize_primitive!(f64, serialize_f64);
     decl_serialize_primitive!(usize, serialize_usize);
     decl_serialize_primitive!(isize, serialize_isize);
 }

@@ -111,6 +111,8 @@ impl<'w, W: io::Write, F: WriteFormatter<W>> Serializer for JsonSerializer<'w, W
     impl_serialize_primitive!(u32, serialize_u32, write_u32);
     impl_serialize_primitive!(u64, serialize_u64, write_u64);
     impl_serialize_primitive!(u128, serialize_u128, write_u128);
+    impl_serialize_primitive!(f32, serialize_f32, write_f32);
+    impl_serialize_primitive!(f64, serialize_f64, write_f64);
     impl_serialize_primitive!(usize, serialize_usize, write_usize);
     impl_serialize_primitive!(isize, serialize_isize, write_isize);
     impl_serialize_primitive!(str, serialize_str, write_str);
@@ -241,6 +243,8 @@ impl<W: io::Write> WriteFormatter<W> for PrettyJsonFormatter {
     impl_write_primitive!(u32, write_u32);
     impl_write_primitive!(u64, write_u64);
     impl_write_primitive!(u128, write_u128);
+    impl_write_primitive!(f32, write_f32);
+    impl_write_primitive!(f64, write_f64);
     impl_write_primitive!(usize, write_usize);
     impl_write_primitive!(isize, write_isize);
     impl_write_primitive!(str, write_str);

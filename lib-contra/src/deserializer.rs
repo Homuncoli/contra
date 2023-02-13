@@ -31,6 +31,8 @@ pub trait Deserializer {
     decl_deserialize_primitive!(u32, deserialize_u32);
     decl_deserialize_primitive!(u64, deserialize_u64);
     decl_deserialize_primitive!(u128, deserialize_u128);
+    decl_deserialize_primitive!(f32, deserialize_f32);
+    decl_deserialize_primitive!(f64, deserialize_f64);
     decl_deserialize_primitive!(usize, deserialize_usize);
     decl_deserialize_primitive!(isize, deserialize_isize);
     decl_deserialize_primitive!(String, deserialize_string);
