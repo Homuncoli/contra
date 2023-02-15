@@ -75,9 +75,9 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
                 ser.begin_struct(stringify!(#c_ident), #n_fields)?;
 
                 #(#ser_fields)*
-                
+
                 ser.end_struct(stringify!(#c_ident))?;
-                
+
                 Ok(())
             }
         }
@@ -152,9 +152,9 @@ pub fn impl_deserialize(input: TokenStream) -> TokenStream {
         impl ::lib_contra::deserialize::Deserialize for #c_ident {
             fn deserialize<D: ::lib_contra::deserializer::Deserializer>(des: &mut D) -> Result<Self, ::lib_contra::error::AnyError> {
                 des.deserialize_struct_begin(stringify!(#c_ident), #n_fields)?;
-                
+
                 #(#des_fields)*
-    
+
                 des.deserialize_struct_end(stringify!(#c_ident))?;
 
                 Ok(#c_ident {
