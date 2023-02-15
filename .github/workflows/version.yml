@@ -32,4 +32,4 @@ jobs:
             git config --global user.name "Github Action Bot: Version"
             git config --global user.email "<>"
       - name: Upgrade Version
-        run: "cargo ws version $BUMP -a --exact --force '*' -y --no-individual-tags -m '[PUBLISH]: %v"
+        run: "cargo ws version $BUMP -a --exact --force '*' -y --no-individual-tags -m '[PUBLISH]: %v'"
