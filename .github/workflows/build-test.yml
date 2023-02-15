@@ -1,4 +1,4 @@
-name: Build and Test
+name: Lint then Build and Test
 
 on:
   pull_request:
@@ -6,11 +6,40 @@ on:
       - "master"
 
 jobs:
-  workspace:
+  build_and_test:
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build workspace
+      run: cargo build --verbose --workspace
+    - name: Test workspace
+      run: cargo test --verbose --workspace --no-fail-fast --tests
+    - name: Test docs
+      run: cargo test --verbose --workspace --no-fail-fast --doc
+
+  lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Build
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Lint
+      id: lint
+      run: cargo fmt
+    - name: "Setup Git Credentials"
+      run: |
+          git config --global user.name "Github Action Bot: Formatting"
+          git config --global user.email "<>"
+    - name: "Commit"
+      run: "git commit -m 'chore: fmt'"
+      if: steps.lint.outcome == 'success'
+    - name: "Push"
+      run: git push
+      if: steps.lint.outcome == 'success'
+
+    - name: Build workspace
       run: cargo build --verbose --workspace
-    - name: Run tests
-      run: cargo test --verbose --workspace
