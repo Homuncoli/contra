@@ -7,32 +7,17 @@ on:
 
 jobs:
   publish:
+    if: "startsWith(github.event.head_commit.message, '[PUBLISH]: ')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build
-        run: cargo build --verbose --workspace
-      - name: Run tests
-        run: cargo test --verbose --workspace
       - uses: actions-rs/install@v0.1
         with:
           crate: cargo-workspaces
           version: latest
-      - name: "Default version bump: patch" 
-        run: echo "BUMP=patch" >> $GITHUB_ENV
-      - name: "Determine version bump: minor" 
-        run: echo "BUMP=minor" >> $GITHUB_ENV
-        if: contains(github.event.head_commit.message, 'feat/')
-      - name: "Determine version bump: major" 
-        run: echo "BUMP=major" >> $GITHUB_ENV
-        if: contains(github.event.head_commit.message, 'release/')
-      - name: "Setup Git Credentials"
-        run: |
-            git config --global user.name "Github Action Bot"
-            git config --global user.email "<>"
       - name: Publish
-        run: "cargo ws publish $BUMP -a -y --no-individual-tags --token $CRATE_REGISTRY_TOKEN --exact --force '*'"
+        run: "cargo ws publish $BUMP -a --exact --force '*' -y --no-git-commit --from-git --token $CRATE_REGISTRY_TOKEN"
         env:
           CRATE_REGISTRY_TOKEN: ${{ secrets.CRATE_REGISTRY_TOKEN }}
