@@ -41,6 +41,3 @@ jobs:
     - name: "Push"
       run: git push
       if: steps.lint.outcome == 'success'
-
-    - name: Build workspace
-      run: cargo build --verbose --workspace
