@@ -1,5 +1,8 @@
 # Contra
-![publish](https://github.com/Homuncoli/contra/actions/workflows/publish.yml/badge.svg)
+
+[![Publish](https://github.com/Homuncoli/contra/actions/workflows/publish.yml/badge.svg?branch=master)](https://github.com/Homuncoli/contra/actions/workflows/publish.yml)
+[![Version](https://github.com/Homuncoli/contra/actions/workflows/version.yml/badge.svg?branch=master)](https://github.com/Homuncoli/contra/actions/workflows/version.yml)
+[![Lint, Build and Test](https://github.com/Homuncoli/contra/actions/workflows/build-test.yml/badge.svg?branch=master)](https://github.com/Homuncoli/contra/actions/workflows/build-test.yml)
 
 Contra is a configuration file loader for Rust.
 
