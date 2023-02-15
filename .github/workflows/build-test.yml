@@ -31,13 +31,20 @@ jobs:
     - name: Lint
       id: lint
       run: cargo fmt
+    - name: Detect changes
+      id: changes
+      run: git diff HEAD --exit-code
+      if: steps.lint.outcome == 'success'
     - name: "Setup Git Credentials"
       run: |
           git config --global user.name "Github Action Bot: Formatting"
           git config --global user.email "<>"
+      if: steps.changes.outcome == 'success'
     - name: "Commit"
-      run: "git commit -m 'chore: fmt'"
-      if: steps.lint.outcome == 'success'
+      run: |
+        "git add ."
+        "git commit -m 'chore: fmt'"
+      if: steps.changes.outcome == 'success'
     - name: "Push"
       run: git push
-      if: steps.lint.outcome == 'success'
+      if: steps.changes.outcome == 'success'
