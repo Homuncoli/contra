@@ -3,13 +3,11 @@
 //! Provides the function and traits needed for the serialization and deserialization of any arbitrary object.
 
 pub mod deserialize;
-pub mod deserializer;
 pub mod error;
 pub mod formatter;
 pub mod persistent;
 pub mod position;
 pub mod serialize;
-pub mod serializer;
 
 #[cfg(test)]
 mod test {
@@ -17,8 +15,7 @@ mod test {
         deserialize::{json::FromJson, Deserialize},
         error::SuccessResult,
         position::Position,
-        serialize::{json::IntoJson, Serialize},
-        serializer::Serializer,
+        serialize::{json::IntoJson, Serialize, Serializer}
     };
 
     #[derive(Debug, PartialEq)]
@@ -89,7 +86,7 @@ mod test {
     }
 
     impl Deserialize for PrimitiveDataTypesStruct {
-        fn deserialize<D: crate::deserializer::Deserializer>(
+        fn deserialize<D: crate::deserialize::Deserializer>(
             des: &mut D,
         ) -> Result<Self, crate::error::AnyError> {
             des.deserialize_struct_begin("PrimitiveDataTypesStruct", 15)?;

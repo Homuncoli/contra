@@ -34,8 +34,8 @@ fn serialize_with_default<S: Serialize>(value: &S) -> Result<Vec<u8>, AnyError> 
 }
 
 fn deserialize_with_default<D: Deserialize>(value: &[u8]) -> Result<D, AnyError> {
-    let mut cursor = Cursor::new(value);
-    let mut des = DefaultDeserializer::new(&mut cursor);
+    let cursor = Cursor::new(value);
+    let mut des = DefaultDeserializer::new(cursor);
     D::deserialize(&mut des)
 }
 
@@ -60,7 +60,7 @@ fn deserializer_factory<D: Deserialize>(value: &[u8], path: &Path) -> Result<D, 
 }
 
 type DefaultSerializer<'w> = JsonSerializer<'w, Vec<u8>, PrettyJsonFormatter>;
-type DefaultDeserializer<'w> = JsonDeserializer<'w, Cursor<&'w [u8]>>;
+type DefaultDeserializer<'w> = JsonDeserializer<Cursor<&'w [u8]>>;
 
 impl<T: Sized + Serialize + Deserialize> Persistent for T {
     fn save(&self, path: &str) -> Result<(), AnyError> {
