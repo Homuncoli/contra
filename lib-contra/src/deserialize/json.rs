@@ -177,6 +177,10 @@ impl<'de, P: Peek> MapAccess for JsonMap<'de, P> {
         self.de.parse_whitespaces()?;
         match self.de.read.peek()? {
             Some(b'"') => Ok(Some(K::deserialize(&mut *self.de)?)),
+            Some(b',') => { 
+                self.de.read.consume()?;
+                self.next_key()
+            },
             Some(b'}') => Ok(None),
             Some(_) | None => Err("expected a map key".into()),
         }
@@ -235,12 +239,14 @@ mod test {
         #[derive(Debug)]
         struct A {
             a: i32,
+            s: String
         }
 
         impl Deserialize for A {
             fn deserialize<D: Deserializer>(des: D) -> Result<Self, AnyError> {
                 enum Field {
-                    a
+                    a,
+                    s
                 }
 
                 impl Deserialize for Field {
@@ -252,6 +258,7 @@ mod test {
                             fn visit_str(self, v: &str) -> Result<Self::Value, AnyError> {
                                 match v {
                                     "a" => Ok(Field::a),
+                                    "s" => Ok(Field::s),
                                     val => Err(format!("unknown \"{}\" field for A", val).into())
                                 }
                             }
@@ -275,6 +282,7 @@ mod test {
 
                     fn visit_map<M: MapAccess>(self, mut map: M) -> Result<Self::Value, AnyError> {
                         let mut a = None;
+                        let mut s = None;
 
                         while let Some(key) = map.next_key()? {
                             match key {
@@ -283,14 +291,22 @@ mod test {
                                         return Err("duplicate field a".into());
                                     };
                                     a = Some(map.next_value()?) 
+                                },
+                                Field::s => {
+                                    if s.is_some() {
+                                        return Err("duplicate field a".into());
+                                    };
+                                    s = Some(map.next_value()?) 
                                 }
                             }
                         }
 
                         let a = a.ok_or_else(|| "missing field a")?;
+                        let s = s.ok_or_else(|| "missing field s")?;
 
                         Ok(A {
-                            a: a
+                            a: a,
+                            s: s
                         })
                     }
                 }
@@ -299,7 +315,7 @@ mod test {
             }
         }
 
-        let input = "{ \"a\": \"32\" }";
+        let input = "{ \"a\": \"32\", \"s\": \"well well well\" }";
         let input = Cursor::new(input);
 
         let mut de = JsonDeserializer { read: input };
@@ -308,6 +324,7 @@ mod test {
 
         dbg!(&a);
         assert!(a.is_ok());
-        assert_eq!(a.unwrap().a, 32);
+        assert_eq!(a.as_ref().unwrap().a, 32);
+        assert_eq!(a.as_ref().unwrap().s, "well well well".to_string());
     }
 }

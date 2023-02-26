@@ -169,6 +169,24 @@ impl<R: io::Read + io::Seek> Peek for R {
 }
 
 // ##########################################
+impl Deserialize for String {
+    fn deserialize<D: Deserializer>(des: D) -> Result<Self, AnyError> {
+        struct StringVisitor {}
+        impl Visitor for StringVisitor {
+            type Value = String;
+
+            fn expected_a(self) -> String {
+                "string".to_string()
+            }
+
+            fn visit_str(self, v: &str) -> Result<Self::Value, AnyError> {
+                Ok(v.to_string())
+            }
+        }
+        
+        des.deserialize_str(StringVisitor {})
+    }
+}
 
 impl<I: Deserialize> Deserialize for Vec<I> {
     fn deserialize<D: Deserializer>(des: D) -> Result<Self, AnyError> {
