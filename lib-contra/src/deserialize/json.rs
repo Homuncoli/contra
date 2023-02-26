@@ -1,4 +1,4 @@
-use std::{io::Cursor, str::from_utf8};
+use std::{io::Cursor, str::{from_utf8}};
 
 use crate::{error::AnyError};
 
@@ -27,7 +27,15 @@ macro_rules! impl_deserializer_primitive {
                     let str = from_utf8(str.as_slice())?;
                     let val = self.$parse_fn(str)?;
                     v.$visit_fn(val)
-                }
+                },
+                Some(b'"') => {
+                    self.read.consume()?;
+                    let str = self.read.read_until(&[b'"'])?;
+                    self.read.consume()?;
+                    let str = from_utf8(str.as_slice())?;
+                    let val = self.$parse_fn(str)?;
+                    v.$visit_fn(val)
+                },
                 Some(_) | None => Err(concat!("expected a ", stringify!($ttype), " to start").into()),
             }
         }
@@ -37,12 +45,18 @@ macro_rules! impl_deserializer_primitive {
             self.parse_whitespaces()?;
             match self.read.peek()? {
                 Some(b'-') | Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4') | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'.') => {
-                    self.read.consume()?;
-                    let str = self.read.read_until(b'"')?;
-                    self.read.consume()?;
+                    let str = self.read.read_until(&[b' ',b',',b'\t',b'\n',b']',b'}',b':'])?;
                     let str = from_utf8(str.as_slice())?;
                     let val = self.$parse_fn(str)?;
                     v.$visit_fn(val as $cast)
+                },
+                Some(b'"') => {
+                    self.read.consume()?;
+                    let str = self.read.read_until(&[b'"'])?;
+                    self.read.consume()?;
+                    let str = from_utf8(str.as_slice())?;
+                    let val = self.$parse_fn(str)?;
+                    v.$visit_fn(val)
                 },
                 Some(_) | None => Err(concat!("expected a ", stringify!($ttype), " to start").into()),
             }
@@ -73,8 +87,9 @@ impl<P: Peek> JsonDeserializer<P> {
         self.read.consume_matching(&[b' ', b'\n', b'\t'])
     }
 
-    fn parse_signed_number(&mut self, str: &str) -> Result<i32, AnyError> {
-        str.parse().map_err(|err| <Box<dyn std::error::Error>>::from(err))
+    fn parse_signed_number(&mut self, str: &str) -> Result<i32, AnyError>
+    {
+        str.parse().map_err(|err| Box::from(err))
     }
 
     fn parse_unsigned_number(&mut self, str: &str) -> Result<u32, AnyError> {
@@ -106,7 +121,7 @@ impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
                 self.read.consume()?;
                 v.visit_seq(JsonArray { de: self} )
             },
-            Some(_) | None => Err("expected a map to start".into()),
+            Some(_) | None => Err("expected a vec to start".into()),
         }
     }
 
@@ -128,8 +143,18 @@ impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
         }
     }
 
-    impl_deserializer_primitive!(i32, deserialize_i32, parse_signed_number, visit_i32);
-    impl_deserializer_primitive!(f32, deserialize_f32, parse_floating_number, visit_f32);
+    impl_deserializer_primitive!(i8   as i32, deserialize_i8  , parse_signed_number,   visit_i32  );
+    impl_deserializer_primitive!(i16  as i32, deserialize_i16 , parse_signed_number,   visit_i32 );
+    impl_deserializer_primitive!(i32  as i32, deserialize_i32 , parse_signed_number,   visit_i32 );
+    impl_deserializer_primitive!(i64  as i32, deserialize_i64 , parse_signed_number,   visit_i32 );
+    impl_deserializer_primitive!(i128 as i32, deserialize_i128, parse_signed_number,   visit_i32);
+    impl_deserializer_primitive!(u8   as u32, deserialize_u8  , parse_unsigned_number, visit_u32  );
+    impl_deserializer_primitive!(u16  as u32, deserialize_u16 , parse_unsigned_number, visit_u32 );
+    impl_deserializer_primitive!(u32  as u32, deserialize_u32 , parse_unsigned_number, visit_u32 );
+    impl_deserializer_primitive!(u64  as u32, deserialize_u64 , parse_unsigned_number, visit_u32 );
+    impl_deserializer_primitive!(u128 as u32, deserialize_u128, parse_unsigned_number, visit_u32);
+    impl_deserializer_primitive!(f32  as f32, deserialize_f32 , parse_floating_number, visit_f32 );
+    impl_deserializer_primitive!(f64  as f32, deserialize_f64 , parse_floating_number, visit_f32 );
 }
 
 impl<'de, P: Peek> MapAccess for JsonMap<'de, P> {
@@ -180,17 +205,18 @@ mod test {
     fn parse_vec_test() {
         let expected = vec![32i32, 64i32];
 
-        let input_literal = "[32, 64]";
-        let input_literal = Cursor::new(input_literal);
-        let mut de_literal = JsonDeserializer { read: input_literal };
-        let result_literal = Vec::<i32>::deserialize(&mut de_literal);
+        let input = "[32, 64]";
+        let input = Cursor::new(input);
+        let mut de = JsonDeserializer { read: input };
+        let result = Vec::<i32>::deserialize(&mut de);
 
-        assert!(result_literal.is_ok());
-        assert_eq!(result_literal.unwrap(), expected);
+        dbg!(&result);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), expected);
     }
 
     #[test]
-    fn working_parse_map_test() {
+    fn parse_map_test() {
         let mut expected = HashMap::new();
         expected.insert(2i32, 32i32);
 

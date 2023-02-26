@@ -54,8 +54,18 @@ pub trait Deserializer: Sized {
     fn deserialize_struct<V: Visitor>(self, v: V) -> Result<V::Value, AnyError>;
     fn deserialize_str<V: Visitor>(self, v: V) -> Result<V::Value, AnyError>;
 
-    decl_deserialize_primitive!(deserialize_i32);
-    decl_deserialize_primitive!(deserialize_f32);
+    decl_deserialize_primitive!(deserialize_i8  );
+    decl_deserialize_primitive!(deserialize_i16 );
+    decl_deserialize_primitive!(deserialize_i32 );
+    decl_deserialize_primitive!(deserialize_i64 );
+    decl_deserialize_primitive!(deserialize_i128);
+    decl_deserialize_primitive!(deserialize_u8  );
+    decl_deserialize_primitive!(deserialize_u16 );
+    decl_deserialize_primitive!(deserialize_u32 );
+    decl_deserialize_primitive!(deserialize_u64 );
+    decl_deserialize_primitive!(deserialize_u128);
+    decl_deserialize_primitive!(deserialize_f32 );
+    decl_deserialize_primitive!(deserialize_f64 );
 }
 
 /// Maps a parsed value to a Rust type
@@ -67,8 +77,18 @@ pub trait Visitor: Sized {
     fn visit_seq<S: SeqAccess>(self, _seq: S) -> Result<Self::Value, AnyError> { Err(visiting_but_expected("seq", &self.expected_a()).into()) }
     fn visit_str(self, _v: &str) -> Result<Self::Value, AnyError> { Err(visiting_but_expected("str", &self.expected_a()).into()) }
 
-    decl_visit_primitive!(i32, visit_i32);
-    decl_visit_primitive!(f32, visit_f32);
+    decl_visit_primitive!(i8  , visit_i8  );
+    decl_visit_primitive!(i16 , visit_i16 );
+    decl_visit_primitive!(i32 , visit_i32 );
+    decl_visit_primitive!(i64 , visit_i64 );
+    decl_visit_primitive!(i128, visit_i128);
+    decl_visit_primitive!(u8  , visit_u8  );
+    decl_visit_primitive!(u16 , visit_u16 );
+    decl_visit_primitive!(u32 , visit_u32 );
+    decl_visit_primitive!(u64 , visit_u64 );
+    decl_visit_primitive!(u128, visit_u128);
+    decl_visit_primitive!(f32 , visit_f32 );
+    decl_visit_primitive!(f64 , visit_f64 );
 }
 
 /// Allows the access to key-value pairs
@@ -201,5 +221,15 @@ impl<K: Deserialize + Hash + Eq, V: Deserialize> Deserialize for HashMap<K, V> {
     }
 }
 
-impl_deserialize_primitive!(i32, visit_i32, deserialize_i32);
-impl_deserialize_primitive!(f32, visit_f32, deserialize_f32);
+impl_deserialize_primitive!(i8,   visit_i8  , deserialize_i8  );
+impl_deserialize_primitive!(i16,  visit_i16 , deserialize_i16 );
+impl_deserialize_primitive!(i32,  visit_i32 , deserialize_i32 );
+impl_deserialize_primitive!(i64,  visit_i64 , deserialize_i64 );
+impl_deserialize_primitive!(i128, visit_i128, deserialize_i128);
+impl_deserialize_primitive!(u8,   visit_u8  , deserialize_u8  );
+impl_deserialize_primitive!(u16,  visit_u16 , deserialize_u16 );
+impl_deserialize_primitive!(u32,  visit_u32 , deserialize_u32 );
+impl_deserialize_primitive!(u64,  visit_u64 , deserialize_u64 );
+impl_deserialize_primitive!(u128, visit_u128, deserialize_u128);
+impl_deserialize_primitive!(f32,  visit_f32,  deserialize_f32 );
+impl_deserialize_primitive!(f64,  visit_f64,  deserialize_f64 );
