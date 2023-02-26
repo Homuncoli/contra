@@ -145,4 +145,23 @@ mod test {
 
         assert_eq!(expected, result);
     }
+
+    #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+    enum EmptyVariantEnum {
+        A,
+        B
+    }
+
+    #[test]
+    fn empty_enum_works() {
+        let a = EmptyVariantEnum::A;
+
+        let json = IntoJson::to_json(&a);
+        dbg!(&json);
+        assert!(json.is_ok());
+        let result = FromJson::from_json(&json.unwrap());
+        dbg!(&result);
+        assert!(result.is_ok());
+        assert_eq!(a, result.unwrap());
+    }
 }

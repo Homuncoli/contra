@@ -12,6 +12,7 @@ The serialization/deserialization is heavily "inspired" (if not blatantly copied
 - [x] Load and save literals
   - [x] string literals
   - [x] numeric literals
+  - [x] enum literals
 - [x] Load and save structs
   - [x] primitive structs
   - [x] nested structs
