@@ -11,7 +11,7 @@ use syn::DeriveInput;
 /// # Example
 /// ```
 /// use proc_contra::Serialize;
-/// 
+///
 /// #[derive(Serialize)]
 /// struct Point {
 ///     x: f32,
@@ -23,13 +23,13 @@ use syn::DeriveInput;
 /// Expands into:
 /// ```
 /// use lib_contra::{serialize::Serialize, serialize::Serializer, position::Position, error::SuccessResult};
-/// 
+///
 /// struct Point {
 ///     x: f32,
 ///     y: f32,
 ///     z: f32
 /// }
-/// 
+///
 /// impl Serialize for Point {
 ///     fn serialize<S: Serializer>(&self, ser: &mut S, _pos: &Position) -> SuccessResult {
 ///         ser.begin_struct("Point", 3)?;
@@ -101,13 +101,13 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
 /// Expands into:
 /// ```
 /// use lib_contra::{deserialize::{MapAccess, Visitor, Deserialize}, position::Position, deserialize::Deserializer, error::AnyError};
-/// 
+///
 /// struct Point {
 ///     x: f32,
 ///     y: f32,
 ///     z: f32
 /// }
-/// 
+///
 /// impl Deserialize for Point {
 ///     fn deserialize<D: Deserializer>(de: D) -> Result<Self, AnyError> {
 ///         enum Field {
@@ -119,7 +119,7 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
 ///                 impl Visitor for FieldVisitor {
 ///                     type Value = Field;
 ///                     fn expected_a(self) -> String { "Point field".to_string() }
-///                     fn visit_str(self, v: &str) -> Result<Self::Value, AnyError> { 
+///                     fn visit_str(self, v: &str) -> Result<Self::Value, AnyError> {
 ///                         match v {
 ///                             "x" => Ok(Field::x),
 ///                             "y" => Ok(Field::y),
@@ -131,7 +131,7 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
 ///                 de.deserialize_str(FieldVisitor {})
 ///             }
 ///         }
-/// 
+///
 ///         struct PointVisitor {}
 ///         impl Visitor for PointVisitor {
 ///             type Value = Point;
@@ -148,17 +148,17 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
 ///                         Field::z => { if z.is_some() { return Err("duplicate field z".into()); } z = Some(map.next_value()?) },
 ///                     }
 ///                 }
-/// 
+///
 ///                 let x = x.ok_or_else(|| "missing field x")?;
 ///                 let y = y.ok_or_else(|| "missing field y")?;
 ///                 let z = z.ok_or_else(|| "missing field z")?;
-/// 
+///
 ///                 Ok(Point {
 ///                     x, y, z
 ///                 })
 ///             }
 ///         }
-/// 
+///
 ///         de.deserialize_struct(PointVisitor {})
 ///     }
 /// }
@@ -180,17 +180,23 @@ pub fn impl_deserialize(input: TokenStream) -> TokenStream {
     };
 
     let field_enum_decl = f_idents.clone().map(|i| quote! { #i });
-    let field_enum_parse = f_idents.clone().map(|i| quote! { stringify!(#i) => Ok(Field::#i) });
+    let field_enum_parse = f_idents
+        .clone()
+        .map(|i| quote! { stringify!(#i) => Ok(Field::#i) });
     let tmp_field_decl = f_idents.clone().map(|i| quote! { let mut #i = None });
-    let tmp_field_parse = f_idents.clone().map(|i| quote! { 
-        Field::#i => { 
-            if #i.is_some() { 
-                return Err(concat!("duplicate field ", stringify!(#i)).into()); 
+    let tmp_field_parse = f_idents.clone().map(|i| {
+        quote! {
+            Field::#i => {
+                if #i.is_some() {
+                    return Err(concat!("duplicate field ", stringify!(#i)).into());
+                }
+                #i = Some(map.next_value()?)
             }
-            #i = Some(map.next_value()?) 
-        } 
+        }
     });
-    let tmp_field_result = f_idents.clone().map(|i| quote! { let #i = #i.ok_or_else(|| concat!("missing field ", stringify!(#i)))? });
+    let tmp_field_result = f_idents
+        .clone()
+        .map(|i| quote! { let #i = #i.ok_or_else(|| concat!("missing field ", stringify!(#i)))? });
     let tmp_field_initializer_list = f_idents.clone().map(|i| quote! { #i });
 
     quote!(
@@ -217,7 +223,7 @@ pub fn impl_deserialize(input: TokenStream) -> TokenStream {
                         de.deserialize_str(FieldVisitor {})
                     }
                 }
-                
+
                 struct StructVisitor {}
                 impl ::lib_contra::deserialize::Visitor for StructVisitor {
                     type Value = #c_ident;

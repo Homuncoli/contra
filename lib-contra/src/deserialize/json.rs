@@ -1,19 +1,22 @@
-use std::{io::Cursor, str::{from_utf8, FromStr}};
+use std::{
+    io::Cursor,
+    str::{from_utf8, FromStr},
+};
 
-use crate::{error::AnyError};
+use crate::error::AnyError;
 
-use super::{MapAccess, Deserialize, Deserializer, Visitor, Peek, SeqAccess};
+use super::{Deserialize, Deserializer, MapAccess, Peek, SeqAccess, Visitor};
 
 pub trait FromJson: Sized {
     fn from_json(str: &str) -> Result<Self, AnyError>;
 }
 
 impl<D: Deserialize> FromJson for D {
-    fn from_json(str: &str) -> Result<Self, AnyError> { 
-       let mut de = JsonDeserializer {
-           read: Cursor::new(str)
-       };
-       Self::deserialize(&mut de)
+    fn from_json(str: &str) -> Result<Self, AnyError> {
+        let mut de = JsonDeserializer {
+            read: Cursor::new(str),
+        };
+        Self::deserialize(&mut de)
     }
 }
 
@@ -22,12 +25,15 @@ macro_rules! impl_deserializer_primitive {
         fn $deserialize_fn<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
             self.parse_whitespaces()?;
             match self.read.peek()? {
-                Some(b'-') | Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4') | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'.') => {
-                    let str = self.read.read_until(&[b' ',b',',b'\t',b'\n',b']',b'}',b':'])?;
+                Some(b'-') | Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4')
+                | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'.') => {
+                    let str = self
+                        .read
+                        .read_until(&[b' ', b',', b'\t', b'\n', b']', b'}', b':'])?;
                     let str = from_utf8(str.as_slice())?;
                     let val = self.$parse_fn(str)?;
                     v.$visit_fn(val)
-                },
+                }
                 Some(b'"') => {
                     self.read.consume()?;
                     let str = self.read.read_until(&[b'"'])?;
@@ -35,8 +41,10 @@ macro_rules! impl_deserializer_primitive {
                     let str = from_utf8(str.as_slice())?;
                     let val = self.$parse_fn(str)?;
                     v.$visit_fn(val)
-                },
-                Some(_) | None => Err(concat!("expected a ", stringify!($ttype), " to start").into()),
+                }
+                Some(_) | None => {
+                    Err(concat!("expected a ", stringify!($ttype), " to start").into())
+                }
             }
         }
     };
@@ -44,12 +52,15 @@ macro_rules! impl_deserializer_primitive {
         fn $deserialize_fn<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
             self.parse_whitespaces()?;
             match self.read.peek()? {
-                Some(b'-') | Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4') | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'.') => {
-                    let str = self.read.read_until(&[b' ',b',',b'\t',b'\n',b']',b'}',b':'])?;
+                Some(b'-') | Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4')
+                | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'.') => {
+                    let str = self
+                        .read
+                        .read_until(&[b' ', b',', b'\t', b'\n', b']', b'}', b':'])?;
                     let str = from_utf8(str.as_slice())?;
                     let val = self.$parse_fn(str)?;
                     v.$visit_fn(val as $cast)
-                },
+                }
                 Some(b'"') => {
                     self.read.consume()?;
                     let str = self.read.read_until(&[b'"'])?;
@@ -57,30 +68,30 @@ macro_rules! impl_deserializer_primitive {
                     let str = from_utf8(str.as_slice())?;
                     let val = self.$parse_fn(str)?;
                     v.$visit_fn(val)
-                },
-                Some(_) | None => Err(concat!("expected a ", stringify!($ttype), " to start").into()),
+                }
+                Some(_) | None => {
+                    Err(concat!("expected a ", stringify!($ttype), " to start").into())
+                }
             }
         }
     };
 }
 
 pub struct JsonDeserializer<P: Peek> {
-    read: P
+    read: P,
 }
 
 struct JsonMap<'de, P: Peek> {
-    de: &'de mut JsonDeserializer<P> 
+    de: &'de mut JsonDeserializer<P>,
 }
 
 struct JsonArray<'de, P: Peek> {
-    de: &'de mut JsonDeserializer<P> 
+    de: &'de mut JsonDeserializer<P>,
 }
 
 impl<P: Peek> JsonDeserializer<P> {
     pub fn new(peek: P) -> Self {
-        Self {
-            read: peek,
-        }
+        Self { read: peek }
     }
 
     fn parse_whitespaces(&mut self) -> Result<(), AnyError> {
@@ -89,21 +100,21 @@ impl<P: Peek> JsonDeserializer<P> {
 
     fn parse_signed_number<I: FromStr>(&mut self, str: &str) -> Result<I, AnyError>
     where
-        <I as FromStr>::Err : std::error::Error + 'static
+        <I as FromStr>::Err: std::error::Error + 'static,
     {
         str.parse().map_err(|err| Box::from(err))
     }
 
     fn parse_unsigned_number<U: FromStr>(&mut self, str: &str) -> Result<U, AnyError>
     where
-        <U as FromStr>::Err : std::error::Error + 'static
+        <U as FromStr>::Err: std::error::Error + 'static,
     {
         str.parse().map_err(|err| Box::from(err))
     }
 
-    fn parse_floating_number<F: FromStr>(&mut self, str: &str) -> Result<F, AnyError> 
+    fn parse_floating_number<F: FromStr>(&mut self, str: &str) -> Result<F, AnyError>
     where
-        <F as FromStr>::Err : std::error::Error + 'static
+        <F as FromStr>::Err: std::error::Error + 'static,
     {
         str.parse().map_err(|err| Box::from(err))
     }
@@ -115,11 +126,13 @@ impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
         match self.read.peek()? {
             Some(b'{') => {
                 self.read.consume()?;
-                let val = v.visit_map(JsonMap { de: self} );
+                let val = v.visit_map(JsonMap { de: self });
                 self.read.consume()?;
                 val
-            },
-            Some(char) => Err(format!("expected a map to start but got \"{}\" instead", char).into()),
+            }
+            Some(char) => {
+                Err(format!("expected a map to start but got \"{}\" instead", char).into())
+            }
             None => Err("expected a map to start".into()),
         }
     }
@@ -129,8 +142,8 @@ impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
         match self.read.peek()? {
             Some(b'[') => {
                 self.read.consume()?;
-                v.visit_seq(JsonArray { de: self} )
-            },
+                v.visit_seq(JsonArray { de: self })
+            }
             Some(_) | None => Err("expected a vec to start".into()),
         }
     }
@@ -138,7 +151,7 @@ impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
     fn deserialize_struct<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
         self.deserialize_map(v)
     }
-    
+
     fn deserialize_str<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
         self.parse_whitespaces()?;
         match self.read.peek()? {
@@ -148,40 +161,42 @@ impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
                 self.read.consume()?;
                 let str = from_utf8(str.as_slice())?;
                 v.visit_str(str)
-            },
+            }
             Some(_) | None => Err("expected a str to start".into()),
         }
     }
 
-    impl_deserializer_primitive!(i8    , deserialize_i8  , parse_signed_number,    visit_i8  );
-    impl_deserializer_primitive!(i16   , deserialize_i16 , parse_signed_number,    visit_i16 );
-    impl_deserializer_primitive!(i32   , deserialize_i32 , parse_signed_number,    visit_i32 );
-    impl_deserializer_primitive!(i64   , deserialize_i64 , parse_signed_number,    visit_i64 );
-    impl_deserializer_primitive!(i128  , deserialize_i128, parse_signed_number,    visit_i128);
-    impl_deserializer_primitive!(u8    , deserialize_u8  , parse_unsigned_number,  visit_u8  );
-    impl_deserializer_primitive!(u16   , deserialize_u16 , parse_unsigned_number,  visit_u16 );
-    impl_deserializer_primitive!(u32   , deserialize_u32 , parse_unsigned_number,  visit_u32 );
-    impl_deserializer_primitive!(u64   , deserialize_u64 , parse_unsigned_number,  visit_u64 );
-    impl_deserializer_primitive!(u128  , deserialize_u128, parse_unsigned_number,  visit_u128);
-    impl_deserializer_primitive!(f32   , deserialize_f32 , parse_floating_number,  visit_f32 );
-    impl_deserializer_primitive!(f64   , deserialize_f64 , parse_floating_number,  visit_f64 );
-    impl_deserializer_primitive!(isize , deserialize_isize, parse_signed_number  , visit_isize);
-    impl_deserializer_primitive!(usize , deserialize_usize, parse_unsigned_number, visit_usize);
+    impl_deserializer_primitive!(i8, deserialize_i8, parse_signed_number, visit_i8);
+    impl_deserializer_primitive!(i16, deserialize_i16, parse_signed_number, visit_i16);
+    impl_deserializer_primitive!(i32, deserialize_i32, parse_signed_number, visit_i32);
+    impl_deserializer_primitive!(i64, deserialize_i64, parse_signed_number, visit_i64);
+    impl_deserializer_primitive!(i128, deserialize_i128, parse_signed_number, visit_i128);
+    impl_deserializer_primitive!(u8, deserialize_u8, parse_unsigned_number, visit_u8);
+    impl_deserializer_primitive!(u16, deserialize_u16, parse_unsigned_number, visit_u16);
+    impl_deserializer_primitive!(u32, deserialize_u32, parse_unsigned_number, visit_u32);
+    impl_deserializer_primitive!(u64, deserialize_u64, parse_unsigned_number, visit_u64);
+    impl_deserializer_primitive!(u128, deserialize_u128, parse_unsigned_number, visit_u128);
+    impl_deserializer_primitive!(f32, deserialize_f32, parse_floating_number, visit_f32);
+    impl_deserializer_primitive!(f64, deserialize_f64, parse_floating_number, visit_f64);
+    impl_deserializer_primitive!(isize, deserialize_isize, parse_signed_number, visit_isize);
+    impl_deserializer_primitive!(usize, deserialize_usize, parse_unsigned_number, visit_usize);
 }
 
 impl<'de, P: Peek> MapAccess for JsonMap<'de, P> {
     fn next_value<V: Deserialize>(&mut self) -> Result<V, AnyError> {
         self.de.parse_whitespaces()?;
         match self.de.read.peek()? {
-             Some(b':') => {
+            Some(b':') => {
                 self.de.read.consume()?;
                 self.de.parse_whitespaces()?;
                 match self.de.read.peek()? {
-                    Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4') | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'-') | Some(b'"') | Some(b'{') | Some(b'[') => Ok(V::deserialize(&mut *self.de)?),
+                    Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4') | Some(b'5')
+                    | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'-')
+                    | Some(b'"') | Some(b'{') | Some(b'[') => Ok(V::deserialize(&mut *self.de)?),
                     Some(_) | None => Err("expected a map value".into()),
                 }
-             },
-             Some(_) | None => Err("expected a map assignment".into()),
+            }
+            Some(_) | None => Err("expected a map assignment".into()),
         }
     }
 
@@ -189,10 +204,10 @@ impl<'de, P: Peek> MapAccess for JsonMap<'de, P> {
         self.de.parse_whitespaces()?;
         match self.de.read.peek()? {
             Some(b'"') => Ok(Some(K::deserialize(&mut *self.de)?)),
-            Some(b',') => { 
+            Some(b',') => {
                 self.de.read.consume()?;
                 self.next_key()
-            },
+            }
             Some(b'}') => Ok(None),
             Some(_) | None => Err("expected a map key".into()),
         }
@@ -203,8 +218,14 @@ impl<'de, P: Peek> SeqAccess for JsonArray<'de, P> {
     fn next_value<V: Deserialize>(&mut self) -> Result<Option<V>, AnyError> {
         self.de.parse_whitespaces()?;
         match self.de.read.peek()? {
-            Some(b',') => { self.de.read.consume()?; self.next_value() }
-            Some(b']') => { self.de.read.consume()?; Ok(None) }
+            Some(b',') => {
+                self.de.read.consume()?;
+                self.next_value()
+            }
+            Some(b']') => {
+                self.de.read.consume()?;
+                Ok(None)
+            }
             Some(b'"') | Some(_) => Ok(Some(V::deserialize(&mut *self.de)?)),
             None => Err("expected a seq element".into()),
         }
@@ -213,7 +234,7 @@ impl<'de, P: Peek> SeqAccess for JsonArray<'de, P> {
 
 #[cfg(test)]
 mod test {
-    use std::{io::Cursor, collections::HashMap};
+    use std::{collections::HashMap, io::Cursor};
 
     use super::*;
 
@@ -251,14 +272,14 @@ mod test {
         #[derive(Debug)]
         struct A {
             a: i32,
-            s: String
+            s: String,
         }
 
         impl Deserialize for A {
             fn deserialize<D: Deserializer>(des: D) -> Result<Self, AnyError> {
                 enum Field {
                     A,
-                    S
+                    S,
                 }
 
                 impl Deserialize for Field {
@@ -271,7 +292,7 @@ mod test {
                                 match v {
                                     "a" => Ok(Field::A),
                                     "s" => Ok(Field::S),
-                                    val => Err(format!("unknown \"{}\" field for A", val).into())
+                                    val => Err(format!("unknown \"{}\" field for A", val).into()),
                                 }
                             }
 
@@ -298,17 +319,17 @@ mod test {
 
                         while let Some(key) = map.next_key()? {
                             match key {
-                                Field::A => { 
+                                Field::A => {
                                     if a.is_some() {
                                         return Err("duplicate field a".into());
                                     };
-                                    a = Some(map.next_value()?) 
-                                },
+                                    a = Some(map.next_value()?)
+                                }
                                 Field::S => {
                                     if s.is_some() {
                                         return Err("duplicate field s".into());
                                     };
-                                    s = Some(map.next_value()?) 
+                                    s = Some(map.next_value()?)
                                 }
                             }
                         }
@@ -316,10 +337,7 @@ mod test {
                         let a = a.ok_or_else(|| "missing field a")?;
                         let s = s.ok_or_else(|| "missing field s")?;
 
-                        Ok(A {
-                            a: a,
-                            s: s
-                        })
+                        Ok(A { a: a, s: s })
                     }
                 }
 
@@ -331,7 +349,7 @@ mod test {
         let input = Cursor::new(input);
 
         let mut de = JsonDeserializer { read: input };
-        
+
         let a = A::deserialize(&mut de);
 
         dbg!(&a);

@@ -12,9 +12,10 @@ pub mod serialize;
 #[cfg(test)]
 mod test {
     use crate::{
+        deserialize::{Deserialize, Visitor},
         error::SuccessResult,
         position::Position,
-        serialize::{Serialize, Serializer}, deserialize::{Deserialize, Visitor}
+        serialize::{Serialize, Serializer},
     };
 
     #[derive(Debug, PartialEq)]
@@ -85,7 +86,9 @@ mod test {
     }
 
     impl Deserialize for PrimitiveDataTypesStruct {
-        fn deserialize<D: crate::deserialize::Deserializer>(de: D) -> Result<Self, crate::error::AnyError> {
+        fn deserialize<D: crate::deserialize::Deserializer>(
+            de: D,
+        ) -> Result<Self, crate::error::AnyError> {
             enum Field {
                 I8,
                 I16,
@@ -104,7 +107,9 @@ mod test {
                 String,
             }
             impl Deserialize for Field {
-                fn deserialize<D: crate::deserialize::Deserializer>(de: D) -> Result<Self, crate::error::AnyError> {
+                fn deserialize<D: crate::deserialize::Deserializer>(
+                    de: D,
+                ) -> Result<Self, crate::error::AnyError> {
                     struct FieldVisitor {}
                     impl Visitor for FieldVisitor {
                         type Value = Field;
@@ -130,7 +135,7 @@ mod test {
                                 "usize" => Ok(Field::Usize),
                                 "isize" => Ok(Field::Isize),
                                 "string" => Ok(Field::String),
-                                val => Err(format!("unknown field {}", val).into())
+                                val => Err(format!("unknown field {}", val).into()),
                             }
                         }
                     }
@@ -146,42 +151,120 @@ mod test {
                     "PrimitiveDataTypesStruct".to_string()
                 }
 
-                fn visit_map<M: crate::deserialize::MapAccess>(self, mut map: M) -> Result<Self::Value, crate::error::AnyError> {
-                    let mut i8 = None; 
-                    let mut i16 = None; 
-                    let mut i32 = None; 
-                    let mut i64 = None; 
-                    let mut i128 = None; 
-                    let mut u8 = None; 
-                    let mut u16 = None; 
-                    let mut u32 = None; 
-                    let mut u64 = None; 
-                    let mut u128 = None; 
-                    let mut f32 = None; 
-                    let mut f64 = None; 
-                    let mut usize = None; 
-                    let mut isize = None; 
+                fn visit_map<M: crate::deserialize::MapAccess>(
+                    self,
+                    mut map: M,
+                ) -> Result<Self::Value, crate::error::AnyError> {
+                    let mut i8 = None;
+                    let mut i16 = None;
+                    let mut i32 = None;
+                    let mut i64 = None;
+                    let mut i128 = None;
+                    let mut u8 = None;
+                    let mut u16 = None;
+                    let mut u32 = None;
+                    let mut u64 = None;
+                    let mut u128 = None;
+                    let mut f32 = None;
+                    let mut f64 = None;
+                    let mut usize = None;
+                    let mut isize = None;
                     let mut string = None;
 
                     while let Some(key) = map.next_key()? {
                         match key {
-                            Field::I8 => { if i8.is_some() { return Err("duplicate field i8".into() )} i8 = Some(map.next_value()?) }
-                            Field::I16 => { if i16.is_some() { return Err("duplicate field i16".into() )} i16 = Some(map.next_value()?) }
-                            Field::I32 => { if i32.is_some() { return Err("duplicate field i32".into() )} i32 = Some(map.next_value()?) }
-                            Field::I64 => { if i64.is_some() { return Err("duplicate field i64".into() )} i64 = Some(map.next_value()?) }
-                            Field::I128 => { if i128.is_some() { return Err("duplicate field i128".into() )} i128 = Some(map.next_value()?) }
-                            Field::U8 => { if u8.is_some() { return Err("duplicate field u8".into() )} u8 = Some(map.next_value()?) }
-                            Field::U16 => { if u16.is_some() { return Err("duplicate field u16".into() )} u16 = Some(map.next_value()?) }
-                            Field::U32 => { if u32.is_some() { return Err("duplicate field u32".into() )} u32 = Some(map.next_value()?) }
-                            Field::U64 => { if u64.is_some() { return Err("duplicate field u64".into() )} u64 = Some(map.next_value()?) }
-                            Field::U128 => { if u128.is_some() { return Err("duplicate field u128".into() )} u128 = Some(map.next_value()?) }
-                            Field::F32 => { if f32.is_some() { return Err("duplicate field f32".into() )} f32 = Some(map.next_value()?) }
-                            Field::F64 => { if f64.is_some() { return Err("duplicate field f64".into() )} f64 = Some(map.next_value()?) }
-                            Field::Usize => { if usize.is_some() { return Err("duplicate field usize".into() )} usize = Some(map.next_value()?) }
-                            Field::Isize => { if isize.is_some() { return Err("duplicate field isize".into() )} isize = Some(map.next_value()?) }
-                            Field::String => { if string.is_some() { return Err("duplicate field string".into() )} string = Some(map.next_value()?) }
+                            Field::I8 => {
+                                if i8.is_some() {
+                                    return Err("duplicate field i8".into());
+                                }
+                                i8 = Some(map.next_value()?)
+                            }
+                            Field::I16 => {
+                                if i16.is_some() {
+                                    return Err("duplicate field i16".into());
+                                }
+                                i16 = Some(map.next_value()?)
+                            }
+                            Field::I32 => {
+                                if i32.is_some() {
+                                    return Err("duplicate field i32".into());
+                                }
+                                i32 = Some(map.next_value()?)
+                            }
+                            Field::I64 => {
+                                if i64.is_some() {
+                                    return Err("duplicate field i64".into());
+                                }
+                                i64 = Some(map.next_value()?)
+                            }
+                            Field::I128 => {
+                                if i128.is_some() {
+                                    return Err("duplicate field i128".into());
+                                }
+                                i128 = Some(map.next_value()?)
+                            }
+                            Field::U8 => {
+                                if u8.is_some() {
+                                    return Err("duplicate field u8".into());
+                                }
+                                u8 = Some(map.next_value()?)
+                            }
+                            Field::U16 => {
+                                if u16.is_some() {
+                                    return Err("duplicate field u16".into());
+                                }
+                                u16 = Some(map.next_value()?)
+                            }
+                            Field::U32 => {
+                                if u32.is_some() {
+                                    return Err("duplicate field u32".into());
+                                }
+                                u32 = Some(map.next_value()?)
+                            }
+                            Field::U64 => {
+                                if u64.is_some() {
+                                    return Err("duplicate field u64".into());
+                                }
+                                u64 = Some(map.next_value()?)
+                            }
+                            Field::U128 => {
+                                if u128.is_some() {
+                                    return Err("duplicate field u128".into());
+                                }
+                                u128 = Some(map.next_value()?)
+                            }
+                            Field::F32 => {
+                                if f32.is_some() {
+                                    return Err("duplicate field f32".into());
+                                }
+                                f32 = Some(map.next_value()?)
+                            }
+                            Field::F64 => {
+                                if f64.is_some() {
+                                    return Err("duplicate field f64".into());
+                                }
+                                f64 = Some(map.next_value()?)
+                            }
+                            Field::Usize => {
+                                if usize.is_some() {
+                                    return Err("duplicate field usize".into());
+                                }
+                                usize = Some(map.next_value()?)
+                            }
+                            Field::Isize => {
+                                if isize.is_some() {
+                                    return Err("duplicate field isize".into());
+                                }
+                                isize = Some(map.next_value()?)
+                            }
+                            Field::String => {
+                                if string.is_some() {
+                                    return Err("duplicate field string".into());
+                                }
+                                string = Some(map.next_value()?)
+                            }
                         }
-                    };
+                    }
 
                     let i8 = i8.ok_or_else(|| "missing field i8")?;
                     let i16 = i16.ok_or_else(|| "missing field i16")?;

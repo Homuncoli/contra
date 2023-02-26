@@ -19,7 +19,7 @@ use crate::{
 };
 
 /// Allow saving and loading to/from disk
-/// 
+///
 /// Automatically implemented for types that implement both [Serialize] and [Deserialize]
 pub trait Persistent: Serialize + Deserialize {
     fn save(&self, path: &str) -> Result<(), AnyError>;

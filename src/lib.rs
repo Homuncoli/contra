@@ -9,7 +9,7 @@
 //! ```
 //! use proc_contra::{Serialize, Deserialize};
 //! use lib_contra::{error::SuccessResult, position::Position, persistent::Persistent};
-//! 
+//!
 //! #[derive(Serialize, Deserialize)]
 //! struct Point {
 //!     x: f32,
@@ -74,18 +74,18 @@ mod test {
     impl PrimitiveDataTypesStruct {
         fn new() -> Self {
             PrimitiveDataTypesStruct {
-                i8:     i8::MAX,
-                i16:    i16::MAX,
-                i32:    i32::MAX,
-                i64:    i64::MAX,
-                i128:   i128::MAX,
-                u8:     u8::MAX,
-                u16:    u16::MAX,
-                u32:    u32::MAX,
-                u64:    u64::MAX,
-                u128:   u128::MAX,
-                usize:  usize::MAX,
-                isize:  isize::MAX,
+                i8: i8::MAX,
+                i16: i16::MAX,
+                i32: i32::MAX,
+                i64: i64::MAX,
+                i128: i128::MAX,
+                u8: u8::MAX,
+                u16: u16::MAX,
+                u32: u32::MAX,
+                u64: u64::MAX,
+                u128: u128::MAX,
+                usize: usize::MAX,
+                isize: isize::MAX,
                 string: "Hello World!".to_string(),
             }
         }
