@@ -1,4 +1,4 @@
-use std::{io::Cursor, str::{from_utf8}};
+use std::{io::Cursor, str::{from_utf8, FromStr}};
 
 use crate::{error::AnyError};
 
@@ -87,17 +87,25 @@ impl<P: Peek> JsonDeserializer<P> {
         self.read.consume_matching(&[b' ', b'\n', b'\t'])
     }
 
-    fn parse_signed_number(&mut self, str: &str) -> Result<i32, AnyError>
+    fn parse_signed_number<I: FromStr>(&mut self, str: &str) -> Result<I, AnyError>
+    where
+        <I as FromStr>::Err : std::error::Error + 'static
     {
         str.parse().map_err(|err| Box::from(err))
     }
 
-    fn parse_unsigned_number(&mut self, str: &str) -> Result<u32, AnyError> {
-        str.parse().map_err(|err| <Box<dyn std::error::Error>>::from(err))
+    fn parse_unsigned_number<U: FromStr>(&mut self, str: &str) -> Result<U, AnyError>
+    where
+        <U as FromStr>::Err : std::error::Error + 'static
+    {
+        str.parse().map_err(|err| Box::from(err))
     }
 
-    fn parse_floating_number(&mut self, str: &str) -> Result<f32, AnyError> {
-        str.parse().map_err(|err| <Box<dyn std::error::Error>>::from(err))
+    fn parse_floating_number<F: FromStr>(&mut self, str: &str) -> Result<F, AnyError> 
+    where
+        <F as FromStr>::Err : std::error::Error + 'static
+    {
+        str.parse().map_err(|err| Box::from(err))
     }
 }
 
@@ -107,7 +115,9 @@ impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
         match self.read.peek()? {
             Some(b'{') => {
                 self.read.consume()?;
-                v.visit_map(JsonMap { de: self} )
+                let val = v.visit_map(JsonMap { de: self} );
+                self.read.consume()?;
+                val
             },
             Some(char) => Err(format!("expected a map to start but got \"{}\" instead", char).into()),
             None => Err("expected a map to start".into()),
@@ -143,18 +153,20 @@ impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
         }
     }
 
-    impl_deserializer_primitive!(i8   as i32, deserialize_i8  , parse_signed_number,   visit_i32  );
-    impl_deserializer_primitive!(i16  as i32, deserialize_i16 , parse_signed_number,   visit_i32 );
-    impl_deserializer_primitive!(i32  as i32, deserialize_i32 , parse_signed_number,   visit_i32 );
-    impl_deserializer_primitive!(i64  as i32, deserialize_i64 , parse_signed_number,   visit_i32 );
-    impl_deserializer_primitive!(i128 as i32, deserialize_i128, parse_signed_number,   visit_i32);
-    impl_deserializer_primitive!(u8   as u32, deserialize_u8  , parse_unsigned_number, visit_u32  );
-    impl_deserializer_primitive!(u16  as u32, deserialize_u16 , parse_unsigned_number, visit_u32 );
-    impl_deserializer_primitive!(u32  as u32, deserialize_u32 , parse_unsigned_number, visit_u32 );
-    impl_deserializer_primitive!(u64  as u32, deserialize_u64 , parse_unsigned_number, visit_u32 );
-    impl_deserializer_primitive!(u128 as u32, deserialize_u128, parse_unsigned_number, visit_u32);
-    impl_deserializer_primitive!(f32  as f32, deserialize_f32 , parse_floating_number, visit_f32 );
-    impl_deserializer_primitive!(f64  as f32, deserialize_f64 , parse_floating_number, visit_f32 );
+    impl_deserializer_primitive!(i8    , deserialize_i8  , parse_signed_number,    visit_i8  );
+    impl_deserializer_primitive!(i16   , deserialize_i16 , parse_signed_number,    visit_i16 );
+    impl_deserializer_primitive!(i32   , deserialize_i32 , parse_signed_number,    visit_i32 );
+    impl_deserializer_primitive!(i64   , deserialize_i64 , parse_signed_number,    visit_i64 );
+    impl_deserializer_primitive!(i128  , deserialize_i128, parse_signed_number,    visit_i128);
+    impl_deserializer_primitive!(u8    , deserialize_u8  , parse_unsigned_number,  visit_u8  );
+    impl_deserializer_primitive!(u16   , deserialize_u16 , parse_unsigned_number,  visit_u16 );
+    impl_deserializer_primitive!(u32   , deserialize_u32 , parse_unsigned_number,  visit_u32 );
+    impl_deserializer_primitive!(u64   , deserialize_u64 , parse_unsigned_number,  visit_u64 );
+    impl_deserializer_primitive!(u128  , deserialize_u128, parse_unsigned_number,  visit_u128);
+    impl_deserializer_primitive!(f32   , deserialize_f32 , parse_floating_number,  visit_f32 );
+    impl_deserializer_primitive!(f64   , deserialize_f64 , parse_floating_number,  visit_f64 );
+    impl_deserializer_primitive!(isize , deserialize_isize, parse_signed_number  , visit_isize);
+    impl_deserializer_primitive!(usize , deserialize_usize, parse_unsigned_number, visit_usize);
 }
 
 impl<'de, P: Peek> MapAccess for JsonMap<'de, P> {
@@ -165,7 +177,7 @@ impl<'de, P: Peek> MapAccess for JsonMap<'de, P> {
                 self.de.read.consume()?;
                 self.de.parse_whitespaces()?;
                 match self.de.read.peek()? {
-                    Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4') | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'-') | Some(b'"') => Ok(V::deserialize(&mut *self.de)?),
+                    Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4') | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'-') | Some(b'"') | Some(b'{') | Some(b'[') => Ok(V::deserialize(&mut *self.de)?),
                     Some(_) | None => Err("expected a map value".into()),
                 }
              },
@@ -245,8 +257,8 @@ mod test {
         impl Deserialize for A {
             fn deserialize<D: Deserializer>(des: D) -> Result<Self, AnyError> {
                 enum Field {
-                    a,
-                    s
+                    A,
+                    S
                 }
 
                 impl Deserialize for Field {
@@ -257,8 +269,8 @@ mod test {
 
                             fn visit_str(self, v: &str) -> Result<Self::Value, AnyError> {
                                 match v {
-                                    "a" => Ok(Field::a),
-                                    "s" => Ok(Field::s),
+                                    "a" => Ok(Field::A),
+                                    "s" => Ok(Field::S),
                                     val => Err(format!("unknown \"{}\" field for A", val).into())
                                 }
                             }
@@ -286,15 +298,15 @@ mod test {
 
                         while let Some(key) = map.next_key()? {
                             match key {
-                                Field::a => { 
+                                Field::A => { 
                                     if a.is_some() {
                                         return Err("duplicate field a".into());
                                     };
                                     a = Some(map.next_value()?) 
                                 },
-                                Field::s => {
+                                Field::S => {
                                     if s.is_some() {
-                                        return Err("duplicate field a".into());
+                                        return Err("duplicate field s".into());
                                     };
                                     s = Some(map.next_value()?) 
                                 }

@@ -66,6 +66,8 @@ pub trait Deserializer: Sized {
     decl_deserialize_primitive!(deserialize_u128);
     decl_deserialize_primitive!(deserialize_f32 );
     decl_deserialize_primitive!(deserialize_f64 );
+    decl_deserialize_primitive!(deserialize_isize);
+    decl_deserialize_primitive!(deserialize_usize);
 }
 
 /// Maps a parsed value to a Rust type
@@ -89,6 +91,8 @@ pub trait Visitor: Sized {
     decl_visit_primitive!(u128, visit_u128);
     decl_visit_primitive!(f32 , visit_f32 );
     decl_visit_primitive!(f64 , visit_f64 );
+    decl_visit_primitive!(usize, visit_usize );
+    decl_visit_primitive!(isize, visit_isize );
 }
 
 /// Allows the access to key-value pairs
@@ -251,3 +255,5 @@ impl_deserialize_primitive!(u64,  visit_u64 , deserialize_u64 );
 impl_deserialize_primitive!(u128, visit_u128, deserialize_u128);
 impl_deserialize_primitive!(f32,  visit_f32,  deserialize_f32 );
 impl_deserialize_primitive!(f64,  visit_f64,  deserialize_f64 );
+impl_deserialize_primitive!(isize,  visit_isize,  deserialize_isize);
+impl_deserialize_primitive!(usize,  visit_usize,  deserialize_usize);

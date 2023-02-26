@@ -10,7 +10,7 @@ pub mod json;
 /// Best to not implemented by hand but rather derived via the Serialize derive macro of the [proc_contra](https://docs.rs/proc_contra/) crate.
 /// See: [Contra](https://docs.rs/contra/)
 /// ```
-/// use crate::{lib_contra::{serialize::Serialize, serializer::Serializer, position::Position, error::SuccessResult}};
+/// use crate::{lib_contra::{serialize::Serialize, serialize::Serializer, position::Position, error::SuccessResult}};
 /// struct Point {
 ///     x: f32,
 ///     y: f32,
