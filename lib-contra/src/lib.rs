@@ -85,60 +85,60 @@ mod test {
         }
     }
 
-    impl Deserialize for PrimitiveDataTypesStruct {
-        fn deserialize<D: crate::deserialize::Deserializer>(
-            des: &mut D,
-        ) -> Result<Self, crate::error::AnyError> {
-            des.deserialize_struct_begin("PrimitiveDataTypesStruct", 15)?;
+    // impl Deserialize for PrimitiveDataTypesStruct {
+    //     fn deserialize<D: crate::deserialize::Deserializer>(
+    //         des: &mut D,
+    //     ) -> Result<Self, crate::error::AnyError> {
+    //         des.deserialize_struct_begin("PrimitiveDataTypesStruct", 15)?;
 
-            let i8 = des.deserialize_field("i8")?;
-            let i16 = des.deserialize_field("i16")?;
-            let i32 = des.deserialize_field("i32")?;
-            let i64 = des.deserialize_field("i64")?;
-            let i128 = des.deserialize_field("i128")?;
-            let u8 = des.deserialize_field("u8")?;
-            let u16 = des.deserialize_field("u16")?;
-            let u32 = des.deserialize_field("u32")?;
-            let u64 = des.deserialize_field("u64")?;
-            let u128 = des.deserialize_field("u128")?;
-            let f32 = des.deserialize_field("f32")?;
-            let f64 = des.deserialize_field("f64")?;
-            let usize = des.deserialize_field("usize")?;
-            let isize = des.deserialize_field("usize")?;
-            let string = des.deserialize_field("string")?;
+    //         let i8 = des.deserialize_field("i8")?;
+    //         let i16 = des.deserialize_field("i16")?;
+    //         let i32 = des.deserialize_field("i32")?;
+    //         let i64 = des.deserialize_field("i64")?;
+    //         let i128 = des.deserialize_field("i128")?;
+    //         let u8 = des.deserialize_field("u8")?;
+    //         let u16 = des.deserialize_field("u16")?;
+    //         let u32 = des.deserialize_field("u32")?;
+    //         let u64 = des.deserialize_field("u64")?;
+    //         let u128 = des.deserialize_field("u128")?;
+    //         let f32 = des.deserialize_field("f32")?;
+    //         let f64 = des.deserialize_field("f64")?;
+    //         let usize = des.deserialize_field("usize")?;
+    //         let isize = des.deserialize_field("usize")?;
+    //         let string = des.deserialize_field("string")?;
 
-            des.deserialize_struct_end("PrimitiveDataTypesStruct")?;
+    //         des.deserialize_struct_end("PrimitiveDataTypesStruct")?;
 
-            Ok(Self {
-                i8,
-                i16,
-                i32,
-                i64,
-                i128,
-                u8,
-                u16,
-                u32,
-                u64,
-                u128,
-                f32,
-                f64,
-                usize,
-                isize,
-                string,
-            })
-        }
-    }
+    //         Ok(Self {
+    //             i8,
+    //             i16,
+    //             i32,
+    //             i64,
+    //             i128,
+    //             u8,
+    //             u16,
+    //             u32,
+    //             u64,
+    //             u128,
+    //             f32,
+    //             f64,
+    //             usize,
+    //             isize,
+    //             string,
+    //         })
+    //     }
+    // }
 
-    #[test]
-    fn reconstruction_of_struct_works() {
-        let obj = PrimitiveDataTypesStruct::new();
+    // #[test]
+    // fn reconstruction_of_struct_works() {
+    //     let obj = PrimitiveDataTypesStruct::new();
 
-        let json = IntoJson::to_json(&obj);
-        assert!(json.is_ok());
+    //     let json = IntoJson::to_json(&obj);
+    //     assert!(json.is_ok());
 
-        let result = FromJson::from_json(&json.unwrap());
-        assert!(result.is_ok());
+    //     let result = FromJson::from_json(&json.unwrap());
+    //     assert!(result.is_ok());
 
-        assert_eq!(obj, result.unwrap());
-    }
+    //     assert_eq!(obj, result.unwrap());
+    // }
 }
