@@ -4,7 +4,7 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::DeriveInput;
+use syn::{DeriveInput, DataStruct, DataEnum};
 
 /// Derives the *Serialize* trait implementation
 ///
@@ -49,39 +49,11 @@ use syn::DeriveInput;
 pub fn impl_serialize(input: TokenStream) -> TokenStream {
     let ast = syn::parse_macro_input!(input as DeriveInput);
 
-    let c_ident = ast.ident;
-    let n_fields = ast.attrs.len();
-    let mut ser_fields = match ast.data {
-        syn::Data::Struct(str) => str
-            .fields
-            .into_iter()
-            .map(|f| f.ident)
-            .filter(|f| f.is_some())
-            .map(|f| f.unwrap()),
-        syn::Data::Enum(_) => panic!("cannot serialize enums as of yet"),
-        syn::Data::Union(_) => panic!("cannot serialize unions as of yet"),
-    };
-    let closing_field = ser_fields.next_back()
-        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Closing )?; ))).into_iter();
-    let trailing_fields = ser_fields
-        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Trailing)?; ))).into_iter();
-    let ser_fields = trailing_fields
-        .chain(closing_field.into_iter())
-        .filter(|f| f.is_some());
-
-    quote!(
-        impl ::lib_contra::serialize::Serialize for #c_ident {
-            fn serialize<S: ::lib_contra::serialize::Serializer>(&self, ser: &mut S, _pos: &::lib_contra::position::Position) -> ::lib_contra::error::SuccessResult {
-                ser.begin_struct(stringify!(#c_ident), #n_fields)?;
-
-                #(#ser_fields)*
-
-                ser.end_struct(stringify!(#c_ident))?;
-
-                Ok(())
-            }
-        }
-    ).into()
+    match ast.data {
+        syn::Data::Struct(decl) => gen_struct_serialize(ast.ident, decl),
+        syn::Data::Enum(decl) => gen_enum_serialize(ast.ident, decl),
+        syn::Data::Union(_) => todo!(),
+    }
 }
 
 /// Derives the *Deserialize* trait implementation
@@ -167,18 +139,104 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
 pub fn impl_deserialize(input: TokenStream) -> TokenStream {
     let ast = syn::parse_macro_input!(input as DeriveInput);
 
-    let c_ident = ast.ident;
-    let f_idents = match ast.data {
-        syn::Data::Struct(str) => str
-            .fields
-            .into_iter()
-            .map(|f| f.ident)
-            .filter(|f| f.is_some())
-            .map(|f| f.unwrap()),
-        syn::Data::Enum(_) => panic!("cannot deserialize enums as of yet"),
-        syn::Data::Union(_) => panic!("cannot deserialize unions as of yet"),
-    };
+    match ast.data {
+        syn::Data::Struct(decl) => gen_struct_deserialize(ast.ident, decl),
+        syn::Data::Enum(decl) => gen_enum_deserialize(ast.ident, decl),
+        syn::Data::Union(_) => todo!(),
+    }
+}
 
+fn gen_struct_serialize(ident: syn::Ident, decl: DataStruct) -> TokenStream {
+    let c_ident = ident;
+    let n_fields = decl.fields.len();
+    let mut ser_fields = decl.fields
+                                                            .into_iter()
+                                                            .map(|f| f.ident)
+                                                            .filter(|f| f.is_some())
+                                                            .map(|f| f.unwrap());
+    let closing_field = ser_fields.next_back()
+        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Closing )?; ))).into_iter();
+    let trailing_fields = ser_fields
+        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Trailing)?; ))).into_iter();
+    let ser_fields = trailing_fields
+        .chain(closing_field.into_iter())
+        .filter(|f| f.is_some());
+
+    quote!(
+        impl ::lib_contra::serialize::Serialize for #c_ident {
+            fn serialize<S: ::lib_contra::serialize::Serializer>(&self, ser: &mut S, _pos: &::lib_contra::position::Position) -> ::lib_contra::error::SuccessResult {
+                ser.begin_struct(stringify!(#c_ident), #n_fields)?;
+
+                #(#ser_fields)*
+
+                ser.end_struct(stringify!(#c_ident))?;
+
+                Ok(())
+            }
+        }
+    ).into()
+}
+
+fn gen_enum_serialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
+    let e_ident = ident;
+    let variants = decl.variants.into_iter().map(|v| v.ident);
+    
+    let ser_variants = variants.clone().map(|v| quote! { #e_ident::#v => ser.serialize_str(stringify!(#v)) });
+
+    quote!(
+        impl ::lib_contra::serialize::Serialize for #e_ident {
+            fn serialize<S: ::lib_contra::serialize::Serializer>(&self, ser: &mut S, _pos: &::lib_contra::position::Position) -> ::lib_contra::error::SuccessResult {
+                match self {
+                    #(#ser_variants,)*
+                }
+            }
+        }
+    ).into()
+}
+
+fn gen_enum_deserialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
+    let e_ident = ident;
+    let variants = decl
+                                                    .variants
+                                                    .into_iter()
+                                                    .map(|v| v.ident);
+
+    let parse_variants = variants.clone().map(|v| quote! { stringify!(#v) => Ok(#e_ident::#v) });
+
+    quote! {
+        impl ::lib_contra::deserialize::Deserialize for #e_ident {
+            fn deserialize<D: ::lib_contra::deserialize::Deserializer>(des: D) -> Result<Self, ::lib_contra::error::AnyError> {
+                struct EnumVisitor {}
+                impl ::lib_contra::deserialize::Visitor for EnumVisitor {
+                    type Value = #e_ident;
+    
+                    fn expected_a(self) -> String {
+                        concat!(stringify!(#e_ident), " variant").to_string()
+                    }
+    
+                    fn visit_str(self, v: &str) -> Result<Self::Value, ::lib_contra::error::AnyError> {
+                        match v {
+                            #(#parse_variants,)*
+                            err => Err(format!("invalid {} variant \"{}\"", stringify!(#e_ident), err).into())
+                        }
+                    }
+                }
+
+                des.deserialize_str(EnumVisitor {})
+            }
+        }
+    }.into()
+}
+
+fn gen_struct_deserialize(ident: syn::Ident, decl: DataStruct) -> TokenStream {
+    let c_ident = ident;
+    let f_idents = decl
+                                                    .fields
+                                                    .into_iter()
+                                                    .map(|f| f.ident)
+                                                    .filter(|f| f.is_some())
+                                                    .map(|f| f.unwrap());
+    
     let field_enum_decl = f_idents.clone().map(|i| quote! { #i });
     let field_enum_parse = f_idents
         .clone()

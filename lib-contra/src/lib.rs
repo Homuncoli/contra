@@ -12,10 +12,10 @@ pub mod serialize;
 #[cfg(test)]
 mod test {
     use crate::{
-        deserialize::{Deserialize, Visitor},
+        deserialize::{Deserialize, Visitor, json::FromJson},
         error::SuccessResult,
         position::Position,
-        serialize::{Serialize, Serializer},
+        serialize::{Serialize, Serializer, json::IntoJson},
     };
 
     #[derive(Debug, PartialEq)]
@@ -76,7 +76,7 @@ mod test {
             ser.serialize_field("f32", &self.f32, &Position::Trailing)?;
             ser.serialize_field("f64", &self.f64, &Position::Trailing)?;
             ser.serialize_field("usize", &self.usize, &Position::Trailing)?;
-            ser.serialize_field("usize", &self.isize, &Position::Trailing)?;
+            ser.serialize_field("isize", &self.isize, &Position::Trailing)?;
             ser.serialize_field("string", &self.string, &Position::Closing)?;
 
             ser.end_struct("PrimitiveDataTypesStruct")?;
@@ -306,16 +306,15 @@ mod test {
         }
     }
 
-    // #[test]
-    // fn reconstruction_of_struct_works() {
-    //     let obj = PrimitiveDataTypesStruct::new();
-
-    //     let json = IntoJson::to_json(&obj);
-    //     assert!(json.is_ok());
-
-    //     let result = FromJson::from_json(&json.unwrap());
-    //     assert!(result.is_ok());
-
-    //     assert_eq!(obj, result.unwrap());
-    // }
+    #[test]
+    fn reconstruction_of_struct_works() {
+        let obj = PrimitiveDataTypesStruct::new();
+        let json = IntoJson::to_json(&obj);
+        dbg!(&json);
+        assert!(json.is_ok());
+        let result = FromJson::from_json(&json.unwrap());
+        dbg!(&result);
+        assert!(result.is_ok());
+        assert_eq!(obj, result.unwrap());
+    }
 }
