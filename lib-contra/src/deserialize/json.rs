@@ -1,335 +1,360 @@
 use std::{
-    io::{self, Cursor, SeekFrom},
-    str::from_utf8,
+    io::Cursor,
+    str::{from_utf8, FromStr},
 };
 
-use crate::{
-    deserializer::Deserializer,
-    error::{AnyError, SuccessResult},
-    formatter::ReadFormatter,
-};
+use crate::error::AnyError;
 
-use super::Deserialize;
+use super::{Deserialize, Deserializer, MapAccess, Peek, SeqAccess, Visitor};
 
 pub trait FromJson: Sized {
-    fn from_json(json: &str) -> Result<Self, AnyError>;
+    fn from_json(str: &str) -> Result<Self, AnyError>;
 }
 
-impl<T: Deserialize> FromJson for T {
-    fn from_json(json: &str) -> Result<Self, AnyError> {
-        let mut cursor = Cursor::new(json.as_bytes());
-        let mut des = JsonDeserializer::new(&mut cursor);
-        Self::deserialize(&mut des)
-    }
-}
-
-pub struct JsonFormatter {}
-
-impl JsonFormatter {
-    fn new() -> Self {
-        Self {}
-    }
-
-    // if the next bytes match **expected**, they remain consumed, otherwise its rewund
-    fn continues_with_unescaped<R: io::Read + io::Seek>(
-        &mut self,
-        read: &mut R,
-        expected: &[u8],
-    ) -> Result<bool, AnyError> {
-        let prev_pos = read.stream_position()?;
-
-        let mut buffer: Vec<u8> = vec![0; expected.len()];
-        read.read_exact(&mut buffer)?;
-
-        if buffer == expected {
-            Ok(true)
-        } else {
-            read.seek(SeekFrom::Start(prev_pos))?;
-            Ok(false)
-        }
-    }
-
-    // if the next bytes match "**expected**"", they remain consumed, otherwise its rewund
-    fn continues_with_escaped<R: io::Read + io::Seek>(
-        &mut self,
-        read: &mut R,
-        expected: &[u8],
-    ) -> Result<bool, AnyError> {
-        let expected = [b"\"", expected, b"\""].concat();
-        self.continues_with_unescaped(read, &expected)
-    }
-
-    fn read_escaped_string<R: io::Read + io::Seek>(
-        &mut self,
-        read: &mut R,
-    ) -> Result<String, AnyError> {
-        let prev_pos = read.stream_position()?;
-
-        if !self.continues_with_unescaped(read, b"\"")? {
-            read.seek(SeekFrom::Start(prev_pos))?;
-            return Err("expected an escaped string".into());
-        }
-
-        let result = self.read_until(read, b"\"");
-        if result.is_err() {
-            read.seek(SeekFrom::Start(prev_pos))?;
-        }
-
-        let binding = result.unwrap();
-        let mut output = binding.chars();
-        output.next_back();
-        Ok(output.as_str().to_string())
-    }
-
-    fn read_until<R: io::Read + io::Seek>(
-        &mut self,
-        read: &mut R,
-        stop: &[u8],
-    ) -> Result<String, AnyError> {
-        let start_pos = read.stream_position()?;
-        let mut output: String = "".to_string();
-        let mut buffer: [u8; 1] = [0; 1];
-
-        while buffer != stop {
-            let read_result = read.read_exact(&mut buffer);
-            if read_result.is_err() {
-                read.seek(SeekFrom::Start(start_pos))?;
-            }
-
-            let parse_result = from_utf8(&buffer);
-            if read_result.is_err() {
-                read.seek(SeekFrom::Start(start_pos))?;
-            }
-
-            output += parse_result.unwrap();
-        }
-        Ok(output)
-    }
-
-    // consumes the next idents and linebreaks
-    fn strip<R: io::Read + io::Seek>(&mut self, read: &mut R) -> SuccessResult {
-        let mut result = true;
-
-        while result {
-            result = false;
-            result |= self.continues_with_unescaped(read, b" ")?;
-            if result {
-                continue;
-            }
-            result |= self.continues_with_unescaped(read, b"\t")?;
-            if result {
-                continue;
-            }
-            //ToDo: make linebreaks platform independant
-            result |= self.continues_with_unescaped(read, b"\n")?;
-        }
-
-        Ok(())
+impl<D: Deserialize> FromJson for D {
+    fn from_json(str: &str) -> Result<Self, AnyError> {
+        let mut de = JsonDeserializer {
+            read: Cursor::new(str),
+        };
+        Self::deserialize(&mut de)
     }
 }
 
-macro_rules! impl_read_primitive {
-    ($ttype: ident, $read_func: ident) => {
-        fn $read_func(&mut self, read: &mut R) -> Result<$ttype, AnyError> {
-            self.strip(read)?;
-            let literal = self.read_escaped_string(read)?;
-            let value = literal.parse::<$ttype>()?;
-            Ok(value)
+macro_rules! impl_deserializer_primitive {
+    ($ttype: ident, $deserialize_fn: ident, $parse_fn: ident, $visit_fn: ident) => {
+        fn $deserialize_fn<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
+            self.parse_whitespaces()?;
+            match self.read.peek()? {
+                Some(b'-') | Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4')
+                | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'.') => {
+                    let str = self
+                        .read
+                        .read_until(&[b' ', b',', b'\t', b'\n', b']', b'}', b':'])?;
+                    let str = from_utf8(str.as_slice())?;
+                    let val = self.$parse_fn(str)?;
+                    v.$visit_fn(val)
+                }
+                Some(b'"') => {
+                    self.read.consume()?;
+                    let str = self.read.read_until(&[b'"'])?;
+                    self.read.consume()?;
+                    let str = from_utf8(str.as_slice())?;
+                    let val = self.$parse_fn(str)?;
+                    v.$visit_fn(val)
+                }
+                Some(_) | None => {
+                    Err(concat!("expected a ", stringify!($ttype), " to start").into())
+                }
+            }
+        }
+    };
+    ($ttype: ident as $cast: ident, $deserialize_fn: ident, $parse_fn: ident, $visit_fn: ident) => {
+        fn $deserialize_fn<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
+            self.parse_whitespaces()?;
+            match self.read.peek()? {
+                Some(b'-') | Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4')
+                | Some(b'5') | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'.') => {
+                    let str = self
+                        .read
+                        .read_until(&[b' ', b',', b'\t', b'\n', b']', b'}', b':'])?;
+                    let str = from_utf8(str.as_slice())?;
+                    let val = self.$parse_fn(str)?;
+                    v.$visit_fn(val as $cast)
+                }
+                Some(b'"') => {
+                    self.read.consume()?;
+                    let str = self.read.read_until(&[b'"'])?;
+                    self.read.consume()?;
+                    let str = from_utf8(str.as_slice())?;
+                    let val = self.$parse_fn(str)?;
+                    v.$visit_fn(val)
+                }
+                Some(_) | None => {
+                    Err(concat!("expected a ", stringify!($ttype), " to start").into())
+                }
+            }
         }
     };
 }
 
-impl<R: io::Read + io::Seek> ReadFormatter<R> for JsonFormatter {
-    fn read_struct_begin(&mut self, read: &mut R, _name: &str, _fields: usize) -> SuccessResult {
-        self.strip(read)?;
-        let valid = self.continues_with_unescaped(read, b"{")?;
-        if valid {
-            Ok(())
-        } else {
-            Err("expected a struct begin \"{\"".into())
-        }
-    }
-
-    fn read_struct_end(&mut self, read: &mut R, _name: &str) -> SuccessResult {
-        self.strip(read)?;
-        let valid = self.continues_with_unescaped(read, b"}")?;
-        if valid {
-            Ok(())
-        } else {
-            Err("expected a struct end \"}\"".into())
-        }
-    }
-
-    fn read_field_assignnment_begin(&mut self, _read: &mut R) -> SuccessResult {
-        Ok(())
-    }
-
-    fn read_field_key(&mut self, read: &mut R, name: &str) -> SuccessResult {
-        self.strip(read)?;
-        let valid = self.continues_with_escaped(read, name.as_bytes())?;
-        if valid {
-            Ok(())
-        } else {
-            Err(format!("expected field \"{}\"", name).into())
-        }
-    }
-
-    fn read_field_assignnment_operator(&mut self, read: &mut R) -> SuccessResult {
-        self.strip(read)?;
-        let valid = self.continues_with_unescaped(read, b":")?;
-        if valid {
-            Ok(())
-        } else {
-            Err(format!("expected assignement operator \"{}\"", ":").into())
-        }
-    }
-
-    fn read_field_assignnment_end(&mut self, read: &mut R) -> SuccessResult {
-        self.strip(read)?;
-        self.continues_with_unescaped(read, b",")?;
-        Ok(())
-    }
-
-    fn read_vec_begin(&mut self, read: &mut R, _name: &str) -> SuccessResult {
-        self.strip(read)?;
-        self.continues_with_unescaped(read, b"[")?;
-        Ok(())
-    }
-
-    fn read_vec_end(&mut self, read: &mut R, _name: &str) -> SuccessResult {
-        self.strip(read)?;
-        self.continues_with_unescaped(read, b"[")?;
-        Ok(())
-    }
-
-    impl_read_primitive!(i8, read_i8);
-    impl_read_primitive!(i16, read_i16);
-    impl_read_primitive!(i32, read_i32);
-    impl_read_primitive!(i64, read_i64);
-    impl_read_primitive!(i128, read_i128);
-    impl_read_primitive!(u8, read_u8);
-    impl_read_primitive!(u16, read_u16);
-    impl_read_primitive!(u32, read_u32);
-    impl_read_primitive!(u64, read_u64);
-    impl_read_primitive!(u128, read_u128);
-    impl_read_primitive!(f32, read_f32);
-    impl_read_primitive!(f64, read_f64);
-    impl_read_primitive!(usize, read_usize);
-    impl_read_primitive!(isize, read_isize);
-    impl_read_primitive!(String, read_string);
+pub struct JsonDeserializer<P: Peek> {
+    read: P,
 }
 
-pub struct JsonDeserializer<'r, R: io::Read + io::Seek> {
-    read: &'r mut R,
-    formatter: JsonFormatter,
+struct JsonMap<'de, P: Peek> {
+    de: &'de mut JsonDeserializer<P>,
 }
 
-impl<'r, R: io::Read + io::Seek> JsonDeserializer<'r, R> {
-    pub fn new(json: &'r mut R) -> Self {
-        Self {
-            read: json,
-            formatter: JsonFormatter::new(),
-        }
+struct JsonArray<'de, P: Peek> {
+    de: &'de mut JsonDeserializer<P>,
+}
+
+impl<P: Peek> JsonDeserializer<P> {
+    pub fn new(peek: P) -> Self {
+        Self { read: peek }
+    }
+
+    fn parse_whitespaces(&mut self) -> Result<(), AnyError> {
+        self.read.consume_matching(&[b' ', b'\n', b'\t'])
+    }
+
+    fn parse_signed_number<I: FromStr>(&mut self, str: &str) -> Result<I, AnyError>
+    where
+        <I as FromStr>::Err: std::error::Error + 'static,
+    {
+        str.parse().map_err(|err| Box::from(err))
+    }
+
+    fn parse_unsigned_number<U: FromStr>(&mut self, str: &str) -> Result<U, AnyError>
+    where
+        <U as FromStr>::Err: std::error::Error + 'static,
+    {
+        str.parse().map_err(|err| Box::from(err))
+    }
+
+    fn parse_floating_number<F: FromStr>(&mut self, str: &str) -> Result<F, AnyError>
+    where
+        <F as FromStr>::Err: std::error::Error + 'static,
+    {
+        str.parse().map_err(|err| Box::from(err))
     }
 }
 
-macro_rules! impl_deserialize_primitive {
-    ($ttype: ident, $des_func: ident, $for_func: ident) => {
-        fn $des_func(&mut self) -> Result<$ttype, AnyError> {
-            self.formatter.$for_func(&mut self.read)
+impl<P: Peek> Deserializer for &mut JsonDeserializer<P> {
+    fn deserialize_map<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
+        self.parse_whitespaces()?;
+        match self.read.peek()? {
+            Some(b'{') => {
+                self.read.consume()?;
+                let val = v.visit_map(JsonMap { de: self });
+                self.read.consume()?;
+                val
+            }
+            Some(char) => {
+                Err(format!("expected a map to start but got \"{}\" instead", char).into())
+            }
+            None => Err("expected a map to start".into()),
         }
-    };
+    }
+
+    fn deserialize_seq<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
+        self.parse_whitespaces()?;
+        match self.read.peek()? {
+            Some(b'[') => {
+                self.read.consume()?;
+                v.visit_seq(JsonArray { de: self })
+            }
+            Some(_) | None => Err("expected a vec to start".into()),
+        }
+    }
+
+    fn deserialize_struct<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
+        self.deserialize_map(v)
+    }
+
+    fn deserialize_str<V: Visitor>(self, v: V) -> Result<V::Value, AnyError> {
+        self.parse_whitespaces()?;
+        match self.read.peek()? {
+            Some(b'"') => {
+                self.read.consume()?;
+                let str = self.read.read_until(&[b'"'])?;
+                self.read.consume()?;
+                let str = from_utf8(str.as_slice())?;
+                v.visit_str(str)
+            }
+            Some(_) | None => Err("expected a str to start".into()),
+        }
+    }
+
+    impl_deserializer_primitive!(i8, deserialize_i8, parse_signed_number, visit_i8);
+    impl_deserializer_primitive!(i16, deserialize_i16, parse_signed_number, visit_i16);
+    impl_deserializer_primitive!(i32, deserialize_i32, parse_signed_number, visit_i32);
+    impl_deserializer_primitive!(i64, deserialize_i64, parse_signed_number, visit_i64);
+    impl_deserializer_primitive!(i128, deserialize_i128, parse_signed_number, visit_i128);
+    impl_deserializer_primitive!(u8, deserialize_u8, parse_unsigned_number, visit_u8);
+    impl_deserializer_primitive!(u16, deserialize_u16, parse_unsigned_number, visit_u16);
+    impl_deserializer_primitive!(u32, deserialize_u32, parse_unsigned_number, visit_u32);
+    impl_deserializer_primitive!(u64, deserialize_u64, parse_unsigned_number, visit_u64);
+    impl_deserializer_primitive!(u128, deserialize_u128, parse_unsigned_number, visit_u128);
+    impl_deserializer_primitive!(f32, deserialize_f32, parse_floating_number, visit_f32);
+    impl_deserializer_primitive!(f64, deserialize_f64, parse_floating_number, visit_f64);
+    impl_deserializer_primitive!(isize, deserialize_isize, parse_signed_number, visit_isize);
+    impl_deserializer_primitive!(usize, deserialize_usize, parse_unsigned_number, visit_usize);
 }
 
-impl<'r, R: io::Read + io::Seek> Deserializer for JsonDeserializer<'r, R> {
-    fn deserialize_struct_begin(&mut self, name: &str, fields: usize) -> SuccessResult {
-        self.formatter.read_struct_begin(self.read, name, fields)?;
-        Ok(())
-    }
-
-    fn deserialize_struct_end(&mut self, name: &str) -> SuccessResult {
-        self.formatter.read_struct_end(self.read, name)?;
-        Ok(())
-    }
-
-    fn deserialize_field<T: Deserialize>(&mut self, field: &str) -> Result<T, AnyError> {
-        self.formatter
-            .read_field_assignnment_begin(&mut self.read)?;
-        self.formatter.read_field_key(&mut self.read, field)?;
-        self.formatter
-            .read_field_assignnment_operator(&mut self.read)?;
-        let value = T::deserialize(self)?;
-        self.formatter.read_field_assignnment_end(&mut self.read)?;
-        Ok(value)
-    }
-
-    fn deserialize_vec<Item: Deserialize>(&mut self, name: &str) -> Result<Vec<Item>, AnyError> {
-        self.formatter.read_vec_begin(&mut self.read, name)?;
-
-        let mut vec = vec![];
-        while let Ok(item) = Item::deserialize(self) {
-            vec.push(item);
+impl<'de, P: Peek> MapAccess for JsonMap<'de, P> {
+    fn next_value<V: Deserialize>(&mut self) -> Result<V, AnyError> {
+        self.de.parse_whitespaces()?;
+        match self.de.read.peek()? {
+            Some(b':') => {
+                self.de.read.consume()?;
+                self.de.parse_whitespaces()?;
+                match self.de.read.peek()? {
+                    Some(b'0') | Some(b'1') | Some(b'2') | Some(b'3') | Some(b'4') | Some(b'5')
+                    | Some(b'6') | Some(b'7') | Some(b'8') | Some(b'9') | Some(b'-')
+                    | Some(b'"') | Some(b'{') | Some(b'[') => Ok(V::deserialize(&mut *self.de)?),
+                    Some(_) | None => Err("expected a map value".into()),
+                }
+            }
+            Some(_) | None => Err("expected a map assignment".into()),
         }
-
-        self.formatter.read_vec_end(&mut self.read, name)?;
-
-        Ok(vec)
     }
 
-    impl_deserialize_primitive!(i8, deserialize_i8, read_i8);
-    impl_deserialize_primitive!(i16, deserialize_i16, read_i16);
-    impl_deserialize_primitive!(i32, deserialize_i32, read_i32);
-    impl_deserialize_primitive!(i64, deserialize_i64, read_i64);
-    impl_deserialize_primitive!(i128, deserialize_i128, read_i128);
-    impl_deserialize_primitive!(u8, deserialize_u8, read_u8);
-    impl_deserialize_primitive!(u16, deserialize_u16, read_u16);
-    impl_deserialize_primitive!(u32, deserialize_u32, read_u32);
-    impl_deserialize_primitive!(u64, deserialize_u64, read_u64);
-    impl_deserialize_primitive!(u128, deserialize_u128, read_u128);
-    impl_deserialize_primitive!(f32, deserialize_f32, read_f32);
-    impl_deserialize_primitive!(f64, deserialize_f64, read_f64);
-    impl_deserialize_primitive!(usize, deserialize_usize, read_usize);
-    impl_deserialize_primitive!(isize, deserialize_isize, read_isize);
-    impl_deserialize_primitive!(String, deserialize_string, read_string);
+    fn next_key<K: Deserialize>(&mut self) -> Result<Option<K>, AnyError> {
+        self.de.parse_whitespaces()?;
+        match self.de.read.peek()? {
+            Some(b'"') => Ok(Some(K::deserialize(&mut *self.de)?)),
+            Some(b',') => {
+                self.de.read.consume()?;
+                self.next_key()
+            }
+            Some(b'}') => Ok(None),
+            Some(_) | None => Err("expected a map key".into()),
+        }
+    }
+}
+
+impl<'de, P: Peek> SeqAccess for JsonArray<'de, P> {
+    fn next_value<V: Deserialize>(&mut self) -> Result<Option<V>, AnyError> {
+        self.de.parse_whitespaces()?;
+        match self.de.read.peek()? {
+            Some(b',') => {
+                self.de.read.consume()?;
+                self.next_value()
+            }
+            Some(b']') => {
+                self.de.read.consume()?;
+                Ok(None)
+            }
+            Some(b'"') | Some(_) => Ok(Some(V::deserialize(&mut *self.de)?)),
+            None => Err("expected a seq element".into()),
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{deserialize::Deserialize, deserializer::Deserializer, error::AnyError};
+    use std::{collections::HashMap, io::Cursor};
 
-    use super::FromJson;
-
-    #[derive(Debug)]
-    struct PrimitiveDataTypesStruct {
-        i32: i32,
-    }
-
-    impl Deserialize for PrimitiveDataTypesStruct {
-        fn deserialize<D: Deserializer>(des: &mut D) -> Result<Self, crate::error::AnyError> {
-            des.deserialize_struct_begin("PrimitiveDataTypesStruct", 1)?;
-
-            let i32 = des.deserialize_field("i32")?;
-
-            des.deserialize_struct_end("PrimitiveDataTypesStruct")?;
-
-            let obj = Self { i32 };
-
-            Ok(obj)
-        }
-    }
+    use super::*;
 
     #[test]
-    fn deserializing_struct_works() {
-        let json = "
-        {
-            \"i32\":\"2147483647\"
-        }
-        ";
+    fn parse_vec_test() {
+        let expected = vec![32i32, 64i32];
 
-        let result: Result<PrimitiveDataTypesStruct, AnyError> = FromJson::from_json(json);
+        let input = "[32, 64]";
+        let input = Cursor::new(input);
+        let mut de = JsonDeserializer { read: input };
+        let result = Vec::<i32>::deserialize(&mut de);
 
         dbg!(&result);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().i32, i32::MAX);
+        assert_eq!(result.unwrap(), expected);
+    }
+
+    #[test]
+    fn parse_map_test() {
+        let mut expected = HashMap::new();
+        expected.insert(2i32, 32i32);
+
+        let input = "{ \"2\": 32 }";
+        let input = Cursor::new(input);
+        let mut de = JsonDeserializer { read: input };
+        let map = HashMap::<i32, i32>::deserialize(&mut de);
+
+        dbg!(&map);
+        assert!(map.is_ok());
+        assert_eq!(map.unwrap(), expected);
+    }
+
+    #[test]
+    fn parse_struct_test() {
+        #[derive(Debug)]
+        struct A {
+            a: i32,
+            s: String,
+        }
+
+        impl Deserialize for A {
+            fn deserialize<D: Deserializer>(des: D) -> Result<Self, AnyError> {
+                enum Field {
+                    A,
+                    S,
+                }
+
+                impl Deserialize for Field {
+                    fn deserialize<D: Deserializer>(des: D) -> Result<Self, AnyError> {
+                        struct FieldVisitor {}
+                        impl Visitor for FieldVisitor {
+                            type Value = Field;
+
+                            fn visit_str(self, v: &str) -> Result<Self::Value, AnyError> {
+                                match v {
+                                    "a" => Ok(Field::A),
+                                    "s" => Ok(Field::S),
+                                    val => Err(format!("unknown \"{}\" field for A", val).into()),
+                                }
+                            }
+
+                            fn expected_a(self) -> String {
+                                "A field".into()
+                            }
+                        }
+
+                        des.deserialize_str(FieldVisitor {})
+                    }
+                }
+
+                struct AVisitor {}
+                impl Visitor for AVisitor {
+                    type Value = A;
+
+                    fn expected_a(self) -> String {
+                        "A".into()
+                    }
+
+                    fn visit_map<M: MapAccess>(self, mut map: M) -> Result<Self::Value, AnyError> {
+                        let mut a = None;
+                        let mut s = None;
+
+                        while let Some(key) = map.next_key()? {
+                            match key {
+                                Field::A => {
+                                    if a.is_some() {
+                                        return Err("duplicate field a".into());
+                                    };
+                                    a = Some(map.next_value()?)
+                                }
+                                Field::S => {
+                                    if s.is_some() {
+                                        return Err("duplicate field s".into());
+                                    };
+                                    s = Some(map.next_value()?)
+                                }
+                            }
+                        }
+
+                        let a = a.ok_or_else(|| "missing field a")?;
+                        let s = s.ok_or_else(|| "missing field s")?;
+
+                        Ok(A { a: a, s: s })
+                    }
+                }
+
+                des.deserialize_struct(AVisitor {})
+            }
+        }
+
+        let input = "{ \"a\": \"32\", \"s\": \"well well well\" }";
+        let input = Cursor::new(input);
+
+        let mut de = JsonDeserializer { read: input };
+
+        let a = A::deserialize(&mut de);
+
+        dbg!(&a);
+        assert!(a.is_ok());
+        assert_eq!(a.as_ref().unwrap().a, 32);
+        assert_eq!(a.as_ref().unwrap().s, "well well well".to_string());
     }
 }

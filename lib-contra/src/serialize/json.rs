@@ -5,8 +5,7 @@ use crate::error::{AnyError, IoResult, SuccessResult};
 use crate::formatter::WriteFormatter;
 
 use crate::position::Position;
-use crate::serialize::Serialize;
-use crate::serializer::Serializer;
+use crate::serialize::{Serialize, Serializer};
 
 pub trait IntoJson {
     fn to_json(&self) -> Result<String, AnyError>;

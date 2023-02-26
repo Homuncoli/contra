@@ -17,9 +17,9 @@ The serialization/deserialization is heavily "inspired" (if not blatantly copied
   - [x] nested structs
 - [x] Load collections
   - [x] vectors
-  - [ ] maps
+  - [x] maps
 - [ ] Support multiple File Formats
-  - [ ] JSON
+  - [x] JSON
   - [ ] TOML
   - [ ] Cfg
 
