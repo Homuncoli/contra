@@ -35,9 +35,9 @@ pub use proc_contra::{Deserialize, Serialize};
 
 #[cfg(test)]
 mod test {
+    use super::{Deserialize, FromJson, IntoJson, Serialize};
     use crate as contra;
-    use super::{Deserialize, Serialize, IntoJson, FromJson};
-    
+
     #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
     struct EmptyStruct {}
 
@@ -149,7 +149,7 @@ mod test {
     #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
     enum EmptyVariantEnum {
         A,
-        B
+        B,
     }
 
     #[test]

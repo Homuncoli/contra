@@ -12,10 +12,10 @@ pub mod serialize;
 #[cfg(test)]
 mod test {
     use crate::{
-        deserialize::{Deserialize, Visitor, json::FromJson},
+        deserialize::{json::FromJson, Deserialize, Visitor},
         error::SuccessResult,
         position::Position,
-        serialize::{Serialize, Serializer, json::IntoJson},
+        serialize::{json::IntoJson, Serialize, Serializer},
     };
 
     #[derive(Debug, PartialEq)]

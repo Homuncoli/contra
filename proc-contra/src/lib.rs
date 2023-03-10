@@ -4,7 +4,7 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{DeriveInput, DataStruct, DataEnum};
+use syn::{DataEnum, DataStruct, DeriveInput};
 
 /// Derives the *Serialize* trait implementation
 ///
@@ -149,11 +149,12 @@ pub fn impl_deserialize(input: TokenStream) -> TokenStream {
 fn gen_struct_serialize(ident: syn::Ident, decl: DataStruct) -> TokenStream {
     let c_ident = ident;
     let n_fields = decl.fields.len();
-    let mut ser_fields = decl.fields
-                                                            .into_iter()
-                                                            .map(|f| f.ident)
-                                                            .filter(|f| f.is_some())
-                                                            .map(|f| f.unwrap());
+    let mut ser_fields = decl
+        .fields
+        .into_iter()
+        .map(|f| f.ident)
+        .filter(|f| f.is_some())
+        .map(|f| f.unwrap());
     let closing_field = ser_fields.next_back()
         .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &contra::lib_contra::position::Position::Closing )?; ))).into_iter();
     let trailing_fields = ser_fields
@@ -180,8 +181,10 @@ fn gen_struct_serialize(ident: syn::Ident, decl: DataStruct) -> TokenStream {
 fn gen_enum_serialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
     let e_ident = ident;
     let variants = decl.variants.into_iter().map(|v| v.ident);
-    
-    let ser_variants = variants.clone().map(|v| quote! { #e_ident::#v => ser.serialize_str(stringify!(#v)) });
+
+    let ser_variants = variants
+        .clone()
+        .map(|v| quote! { #e_ident::#v => ser.serialize_str(stringify!(#v)) });
 
     quote!(
         impl contra::lib_contra::serialize::Serialize for #e_ident {
@@ -196,12 +199,11 @@ fn gen_enum_serialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
 
 fn gen_enum_deserialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
     let e_ident = ident;
-    let variants = decl
-                                                    .variants
-                                                    .into_iter()
-                                                    .map(|v| v.ident);
+    let variants = decl.variants.into_iter().map(|v| v.ident);
 
-    let parse_variants = variants.clone().map(|v| quote! { stringify!(#v) => Ok(#e_ident::#v) });
+    let parse_variants = variants
+        .clone()
+        .map(|v| quote! { stringify!(#v) => Ok(#e_ident::#v) });
 
     quote! {
         impl contra::lib_contra::deserialize::Deserialize for #e_ident {
@@ -209,11 +211,11 @@ fn gen_enum_deserialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
                 struct EnumVisitor {}
                 impl contra::lib_contra::deserialize::Visitor for EnumVisitor {
                     type Value = #e_ident;
-    
+
                     fn expected_a(self) -> String {
                         concat!(stringify!(#e_ident), " variant").to_string()
                     }
-    
+
                     fn visit_str(self, v: &str) -> Result<Self::Value, contra::lib_contra::error::AnyError> {
                         match v {
                             #(#parse_variants,)*
@@ -231,12 +233,12 @@ fn gen_enum_deserialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
 fn gen_struct_deserialize(ident: syn::Ident, decl: DataStruct) -> TokenStream {
     let c_ident = ident;
     let f_idents = decl
-                                                    .fields
-                                                    .into_iter()
-                                                    .map(|f| f.ident)
-                                                    .filter(|f| f.is_some())
-                                                    .map(|f| f.unwrap());
-    
+        .fields
+        .into_iter()
+        .map(|f| f.ident)
+        .filter(|f| f.is_some())
+        .map(|f| f.unwrap());
+
     let field_enum_decl = f_idents.clone().map(|i| quote! { #i });
     let field_enum_parse = f_idents
         .clone()
