@@ -1,6 +1,6 @@
 [package]
 name = "lib-contra"
-version = "5.0.1"
+version = "5.0.2"
 authors = ["Benedikt Danner <benedikt@danner.eu.com>"]
 edition = "2021"
 description = "The function implementation of contra"
