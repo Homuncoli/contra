@@ -155,16 +155,16 @@ fn gen_struct_serialize(ident: syn::Ident, decl: DataStruct) -> TokenStream {
                                                             .filter(|f| f.is_some())
                                                             .map(|f| f.unwrap());
     let closing_field = ser_fields.next_back()
-        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Closing )?; ))).into_iter();
+        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &contra::lib_contra::position::Position::Closing )?; ))).into_iter();
     let trailing_fields = ser_fields
-        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &::lib_contra::position::Position::Trailing)?; ))).into_iter();
+        .map(|f| Some(quote!(ser.serialize_field(stringify!(#f), &self.#f, &contra::lib_contra::position::Position::Trailing)?; ))).into_iter();
     let ser_fields = trailing_fields
         .chain(closing_field.into_iter())
         .filter(|f| f.is_some());
 
     quote!(
-        impl ::lib_contra::serialize::Serialize for #c_ident {
-            fn serialize<S: ::lib_contra::serialize::Serializer>(&self, ser: &mut S, _pos: &::lib_contra::position::Position) -> ::lib_contra::error::SuccessResult {
+        impl contra::lib_contra::serialize::Serialize for #c_ident {
+            fn serialize<S: contra::lib_contra::serialize::Serializer>(&self, ser: &mut S, _pos: &contra::lib_contra::position::Position) -> contra::lib_contra::error::SuccessResult {
                 ser.begin_struct(stringify!(#c_ident), #n_fields)?;
 
                 #(#ser_fields)*
@@ -184,8 +184,8 @@ fn gen_enum_serialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
     let ser_variants = variants.clone().map(|v| quote! { #e_ident::#v => ser.serialize_str(stringify!(#v)) });
 
     quote!(
-        impl ::lib_contra::serialize::Serialize for #e_ident {
-            fn serialize<S: ::lib_contra::serialize::Serializer>(&self, ser: &mut S, _pos: &::lib_contra::position::Position) -> ::lib_contra::error::SuccessResult {
+        impl contra::lib_contra::serialize::Serialize for #e_ident {
+            fn serialize<S: contra::lib_contra::serialize::Serializer>(&self, ser: &mut S, _pos: &contra::lib_contra::position::Position) -> contra::lib_contra::error::SuccessResult {
                 match self {
                     #(#ser_variants,)*
                 }
@@ -204,17 +204,17 @@ fn gen_enum_deserialize(ident: syn::Ident, decl: DataEnum) -> TokenStream {
     let parse_variants = variants.clone().map(|v| quote! { stringify!(#v) => Ok(#e_ident::#v) });
 
     quote! {
-        impl ::lib_contra::deserialize::Deserialize for #e_ident {
-            fn deserialize<D: ::lib_contra::deserialize::Deserializer>(des: D) -> Result<Self, ::lib_contra::error::AnyError> {
+        impl contra::lib_contra::deserialize::Deserialize for #e_ident {
+            fn deserialize<D: contra::lib_contra::deserialize::Deserializer>(des: D) -> Result<Self, contra::lib_contra::error::AnyError> {
                 struct EnumVisitor {}
-                impl ::lib_contra::deserialize::Visitor for EnumVisitor {
+                impl contra::lib_contra::deserialize::Visitor for EnumVisitor {
                     type Value = #e_ident;
     
                     fn expected_a(self) -> String {
                         concat!(stringify!(#e_ident), " variant").to_string()
                     }
     
-                    fn visit_str(self, v: &str) -> Result<Self::Value, ::lib_contra::error::AnyError> {
+                    fn visit_str(self, v: &str) -> Result<Self::Value, contra::lib_contra::error::AnyError> {
                         match v {
                             #(#parse_variants,)*
                             err => Err(format!("invalid {} variant \"{}\"", stringify!(#e_ident), err).into())
@@ -258,20 +258,20 @@ fn gen_struct_deserialize(ident: syn::Ident, decl: DataStruct) -> TokenStream {
     let tmp_field_initializer_list = f_idents.clone().map(|i| quote! { #i });
 
     quote!(
-        impl ::lib_contra::deserialize::Deserialize for #c_ident {
-            fn deserialize<D: ::lib_contra::deserialize::Deserializer>(de: D) -> Result<Self, ::lib_contra::error::AnyError> {
+        impl contra::lib_contra::deserialize::Deserialize for #c_ident {
+            fn deserialize<D: contra::lib_contra::deserialize::Deserializer>(de: D) -> Result<Self, contra::lib_contra::error::AnyError> {
                 enum Field {
                     #(#field_enum_decl,)*
                 }
-                impl ::lib_contra::deserialize::Deserialize for Field {
-                    fn deserialize<D: ::lib_contra::deserialize::Deserializer>(de: D) -> Result<Self, ::lib_contra::error::AnyError> {
+                impl contra::lib_contra::deserialize::Deserialize for Field {
+                    fn deserialize<D: contra::lib_contra::deserialize::Deserializer>(de: D) -> Result<Self, contra::lib_contra::error::AnyError> {
                         struct FieldVisitor {}
-                        impl ::lib_contra::deserialize::Visitor for FieldVisitor {
+                        impl contra::lib_contra::deserialize::Visitor for FieldVisitor {
                             type Value = Field;
                             fn expected_a(self) -> String {
                                 concat!(stringify!(#c_ident), " field").into()
                             }
-                            fn visit_str(self, v: &str) -> Result<Self::Value, ::lib_contra::error::AnyError> {
+                            fn visit_str(self, v: &str) -> Result<Self::Value, contra::lib_contra::error::AnyError> {
                                 match v {
                                     #(#field_enum_parse,)*
                                     val => Err(format!("unknown \"{}\" field for {}", val, stringify!(#c_ident)).into())
@@ -283,12 +283,12 @@ fn gen_struct_deserialize(ident: syn::Ident, decl: DataStruct) -> TokenStream {
                 }
 
                 struct StructVisitor {}
-                impl ::lib_contra::deserialize::Visitor for StructVisitor {
+                impl contra::lib_contra::deserialize::Visitor for StructVisitor {
                     type Value = #c_ident;
                     fn expected_a(self) -> String {
                         concat!(stringify!(#c_ident), " object").into()
                     }
-                    fn visit_map<M: ::lib_contra::deserialize::MapAccess>(self, mut map: M) -> Result<Self::Value, ::lib_contra::error::AnyError> {
+                    fn visit_map<M: contra::lib_contra::deserialize::MapAccess>(self, mut map: M) -> Result<Self::Value, contra::lib_contra::error::AnyError> {
                         #(#tmp_field_decl;)*
 
                         while let Some(key) = map.next_key::<Field>()? {
