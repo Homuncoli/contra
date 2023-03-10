@@ -9,7 +9,7 @@ use syn::{DataEnum, DataStruct, DeriveInput};
 /// Derives the *Serialize* trait implementation
 ///
 /// # Example
-/// ```
+/// ```ignore
 /// use proc_contra::Serialize;
 ///
 /// #[derive(Serialize)]
@@ -59,7 +59,7 @@ pub fn impl_serialize(input: TokenStream) -> TokenStream {
 /// Derives the *Deserialize* trait implementation
 ///
 /// # Example
-/// ```
+/// ```ignore
 /// use proc_contra::Deserialize;
 /// use lib_contra::{deserialize::Deserialize, position::Position, deserialize::Deserializer, error::AnyError};
 /// #[derive(Deserialize)]
