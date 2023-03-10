@@ -3,7 +3,7 @@
 //! Provides abstract serialization into specific formats.
 //! Additionally provides the functionality to save and load the serialized content directly from and to disk.
 //!
-//! To implement more data formats see: [Serializer](self::lib_contra::serialize::Serializer), [Deserializer](self::lib_contra::deserialize::Deserializer)
+//! To implement more data formats see: [Serializer](::lib_contra::serialize::Serializer), [Deserializer](::lib_contra::deserialize::Deserializer)
 //!
 //! # Examples
 //! ```
@@ -35,8 +35,8 @@ pub use proc_contra::{Deserialize, Serialize};
 
 #[cfg(test)]
 mod test {
-    use lib_contra::{deserialize::json::FromJson, serialize::json::IntoJson};
-    use proc_contra::{Deserialize, Serialize};
+    use super::{Deserialize, FromJson, IntoJson, Serialize};
+    use crate as contra;
 
     #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
     struct EmptyStruct {}
@@ -149,7 +149,7 @@ mod test {
     #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
     enum EmptyVariantEnum {
         A,
-        B
+        B,
     }
 
     #[test]
